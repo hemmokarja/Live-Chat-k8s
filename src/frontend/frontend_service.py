@@ -3,13 +3,13 @@ from flask_socketio import SocketIO, emit
 import requests
 import socketio as client_socketio
 
-app = Flask(__name__)
-app.secret_key = "supersecretkey"
-socketio = SocketIO(app, cors_allowed_origins="*")
-
 LOBBY_SERVICE_URL = "http://localhost:5002"
 
-# create a Socket.IO client to connect to the lobby service
+app = Flask(__name__)
+app.secret_key = "supersecretkey"
+socketio = SocketIO(app)
+
+# client for listending to emissions from lobby service
 lobby_sio = client_socketio.Client()
 lobby_sio.connect(LOBBY_SERVICE_URL)
 

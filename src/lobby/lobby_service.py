@@ -29,16 +29,5 @@ def get_users():
     return jsonify({"users": users})
 
 
-@socketio.on("connect")
-def handle_connect():
-    emit("user_update", {"users": users})
-
-
-@socketio.on("disconnect")
-def handle_disconnect():
-    # handle user leaving logic here
-    pass
-
-
 if __name__ == "__main__":
     socketio.run(app, port=5002, debug=True)
