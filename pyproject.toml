@@ -1,0 +1,16 @@
+[tool.poetry]
+name = "chat-app"
+version = "0.1.0"
+description = ""
+authors = ["Hemmo Karja <hemmo.karja@sok.fi>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "~3.11"
+flask = "^3.0.3"
+flask-socketio = "^5.3.7"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
