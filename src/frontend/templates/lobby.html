@@ -13,7 +13,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
 <script>
   const username = "{{ username }}";
-  const socket = io("http://localhost:5002", {
+  const socket = io("ws://localhost:5002", {
     query: {
       username: username
     }

@@ -3,7 +3,9 @@ from flask_socketio import SocketIO, emit
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = "your_secret_key"
-socketio = SocketIO(app, cors_allowed_origins="*")
+socketio = SocketIO(
+    app, cors_allowed_origins=["http://localhost:5001", "http://127.0.0.1:5001"]
+)
 
 connected_users = {}
 
@@ -41,4 +43,4 @@ def handle_disconnect():
 
 
 if __name__ == "__main__":
-    socketio.run(app, host="0.0.0.0", port=5002, debug=True)
+    socketio.run(app, host="0.0.0.0", port=5002)

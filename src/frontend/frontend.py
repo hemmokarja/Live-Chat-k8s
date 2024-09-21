@@ -1,11 +1,10 @@
 import requests
-from flask import Flask, render_template, request, session, redirect, url_for, jsonify
+from flask import Flask, render_template, request, session, redirect, url_for
+
+BACKEND_URL = "http://backend_service:5002"
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = "your_secret_key"
-
-
-BACKEND_URL = "http://localhost:5002"
 
 
 @app.route("/", methods=["GET"])
@@ -35,4 +34,4 @@ def lobby():
     return render_template("lobby.html", username=username)
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5001, debug=True)
+    app.run(host="0.0.0.0", port=5001)
