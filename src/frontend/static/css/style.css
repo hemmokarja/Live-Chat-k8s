@@ -1,69 +1,138 @@
-.content {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-  
-  .buttons {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-  }
-  
-  .join {
-    display: flex;
-    flex-direction: row;
-    width: 100%;
-  }
-  
-  .submit-btn {
-    width: 100%;
-  }
-  
-  .message-box {
-    border-color: black;
-    border-width: 2px;
-    border-style: solid;
-    border-radius: 10px;
-    background-color: whitesmoke;
-    height: 80vh;
-    display: flex;
-    flex-direction: column;
-    width: 80vw;
-    align-items: stretch;
-  }
-  
-  .messages {
-    overflow-y: scroll;
-    flex: 1;
-    width: 100%;
-  }
-  
-  .inputs {
-    padding: 10px;
-    display: flex;
-  }
-  
-  h2 {
-    text-align: center;
-  }
-  
-  #message {
-    flex: 1;
-  }
-  
-  .text {
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    justify-content: space-between;
-    padding-left: 10px;
-    padding-right: 10px;
-  }
-  
-  .muted {
-    font-size: 10px;
-    color: darkgray;
-  }
+/* Styling for form container */
+.form-container {
+  max-width: 400px;
+  margin: 100px auto;  /* Center the form vertically and horizontally */
+  padding: 20px;
+  border-radius: 10px;
+  background-color: #f7f7f7;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  text-align: center; /* Center align text inside the form */
+}
+
+/* Centering the header */
+.header-title {
+  text-align: center;
+  color: #333;
+  margin-bottom: 20px;
+  font-size: 24px;
+}
+
+/* Styling for h3 inside the form */
+.form-container h3 {
+  text-align: center;
+  color: #555;
+  margin-bottom: 15px;
+}
+
+/* Styling input group */
+.input-group {
+  margin-bottom: 15px;
+  text-align: left; /* Ensure label and input are aligned on the left */
+}
+
+.input-group label {
+  font-size: 14px;
+  color: #555;
+  margin-bottom: 5px;
+}
+
+.input-group input {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  box-sizing: border-box;
+  font-size: 16px;
+}
+
+.input-group input:focus {
+  border-color: #3498db;
+  outline: none;
+  box-shadow: 0 0 5px rgba(52, 152, 219, 0.5);
+}
+
+/* Error message styling */
+.error-message {
+  color: red;
+  text-align: center;
+  margin-top: 10px;
+}
+
+/* Submit button styling */
+.submit-btn {
+  display: block;
+  width: 100%;
+  padding: 10px;
+  background-color: #3498db;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.submit-btn:hover {
+  background-color: #2980b9;
+}
+
+.submit-btn:focus {
+  outline: none;
+  box-shadow: 0 0 5px rgba(41, 128, 185, 0.5);
+}
+
+
+
+  /* General styling for lobby */
+.lobby-container {
+  max-width: 600px;
+  margin: 50px auto;
+  padding: 20px;
+  border-radius: 10px;
+  background-color: #f0f0f0;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.lobby-container h2 {
+  text-align: center;
+  color: #333;
+}
+
+.lobby-container p {
+  text-align: center;
+  color: #555;
+}
+
+.username {
+  font-weight: bold;
+  color: #2c3e50;
+}
+
+/* Styling the user list */
+.user-list-container {
+  margin-top: 20px;
+  border-top: 1px solid #ddd;
+  padding-top: 10px;
+}
+
+.user-list {
+  list-style: none;
+  padding: 0;
+}
+
+.user-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: #ffffff;
+  padding: 10px 15px;
+  margin-bottom: 10px;
+  border-radius: 5px;
+  border: 1px solid #ddd;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  color: #333;
+}
+
+.user-item:hover {
+  background-color: #eaeaea;
+}

@@ -1,16 +1,17 @@
 {% extends 'base.html' %}
 {% block content %}
-<form method="post" class="buttons">
-  <h3>Enter The Chat Room</h3>
-  <div>
-    <label>Username:</label>
-    <input type="text" name="username" />
-  </div>
-  <button type="submit" name="submit-username" class="submit-btn">Submit</button>
-  {% if error %}
-  <ul>
-    <li>{{error}}</li>
-  </ul>
-  {% endif %}
-</form>
+<div class="form-container">
+  <h2 class="header-title">Welcome to Chat!</h2>
+  <form action="/check_username" method="POST">
+    <h3>Enter Your Username</h3>
+    <div class="input-group">
+      <label for="username">Username:</label>
+      <input type="text" placeholder="Choose a username" name="username" id="username" required />
+    </div>
+    <button type="submit" class="submit-btn">Enter Lobby</button>
+    {% if error %}
+    <div id="error" class="error-message">{{ error }}</div>
+    {% endif %}
+  </form>
+</div>
 {% endblock %}

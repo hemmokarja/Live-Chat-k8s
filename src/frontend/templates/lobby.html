@@ -1,45 +1,42 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lobby</title>
-    <script src="https://cdn.socket.io/4.0.1/socket.io.min.js"></script>
-</head>
-<body>
-    <h2>Welcome to the Lobby!</h2>
-    <h3>Current Users</h3>
-    <ul id="users-list">
-        <!-- Usernames will be dynamically injected here -->
-    </ul>
+{% extends "base.html" %}
+{% block content %}
+<div class="lobby-container">
+  <h2>Chat Lobby</h2>
+  <p>Welcome, <span class="username">{{ username }}</span>!</p>
 
-    <script type="text/javascript">
-        // Establish a connection with the WebSocket server (Socket.IO)
-        var socket = io.connect('http://' + document.domain + ':' + location.port);
+  <h3>Connected Users:</h3>
+  <div class="user-list-container">
+    <ul id="userList" class="user-list"></ul>
+  </div>
+</div>
 
-        // Debugging: Log connection success/failure to the console
-        socket.on('connect', function() {
-            console.log('Connected to WebSocket server');
-        });
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+<script>
+  const username = "{{ username }}";
+  const socket = io("http://localhost:5002", {
+    query: {
+      username: username
+    }
+  });
 
-        socket.on('disconnect', function() {
-            console.log('Disconnected from WebSocket server');
-        });
+  const userList = document.getElementById("userList");
 
-        // Listen for 'user_update' event from the server
-        socket.on('user_update', function(data) {
-            console.log('Received user update:', data);
+  socket.on("connect", () => {
+    console.log("Connected to the lobby");
+  });
 
-            var usersList = document.getElementById('users-list');
-            usersList.innerHTML = '';  // Clear current list
+  socket.on("update_user_list", (users) => {
+    userList.innerHTML = "";
+    users.forEach((user) => {
+      const li = document.createElement("li");
+      li.classList.add("user-item");
+      li.innerText = user;
+      userList.appendChild(li);
+    });
+  });
 
-            // Iterate over the users and display them in the list
-            data.users.forEach(function(user) {
-                var li = document.createElement('li');
-                li.textContent = user;
-                usersList.appendChild(li);
-            });
-        });
-    </script>
-</body>
-</html>
+  socket.on("disconnect", () => {
+    console.log("Disconnected from the server");
+  });
+</script>
+{% endblock %}
