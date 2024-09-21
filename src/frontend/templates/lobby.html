@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lobby</title>
+    <script src="https://cdn.socket.io/4.0.1/socket.io.min.js"></script>
+</head>
+<body>
+    <h2>Welcome to the Lobby!</h2>
+    <h3>Current Users</h3>
+    <ul id="users-list">
+        <!-- Usernames will be dynamically injected here -->
+    </ul>
+
+    <script type="text/javascript">
+        // Establish a connection with the WebSocket server (Socket.IO)
+        var socket = io.connect('http://' + document.domain + ':' + location.port);
+
+        // Debugging: Log connection success/failure to the console
+        socket.on('connect', function() {
+            console.log('Connected to WebSocket server');
+        });
+
+        socket.on('disconnect', function() {
+            console.log('Disconnected from WebSocket server');
+        });
+
+        // Listen for 'user_update' event from the server
+        socket.on('user_update', function(data) {
+            console.log('Received user update:', data);
+
+            var usersList = document.getElementById('users-list');
+            usersList.innerHTML = '';  // Clear current list
+
+            // Iterate over the users and display them in the list
+            data.users.forEach(function(user) {
+                var li = document.createElement('li');
+                li.textContent = user;
+                usersList.appendChild(li);
+            });
+        });
+    </script>
+</body>
+</html>
