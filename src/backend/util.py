@@ -77,10 +77,15 @@ class ChatServer:
         user2.in_room = True
         return chatroom
     
-    def list_usernames(self):
+    def list_users_in_lobby(self):
         return [
             user.username for user in self.connected_users.values() if not user.in_room
         ]
-    
+
     def user_is_connected(self, sid):
         return sid in self.connected_users
+    
+    def update_user_sid(self, user, new_sid):
+        del self.connected_users[user.sid]
+        user.sid = new_sid
+        self.connected_users[new_sid] = user

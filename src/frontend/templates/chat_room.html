@@ -1,10 +1,95 @@
+
 {% extends "base.html" %}
 {% block content %}
 <div class="chat-room-container">
-    <h2>Private Chat Room</h2>
-    <p>You are in room: {{ room_id }}</p>
-    <p>Username: {{ username }}</p>
-    <!-- Chat room logic will be implemented here -->
+  <h2>Private Chat Room</h2>
+  <p>You are in room: {{ room_id }}</p>
+  <p>Username: {{ username }}</p>
+
+  <!-- Message Display Area -->
+  <div id="chat-messages" class="chat-messages"></div>
+
+  <!-- Message Input -->
+  <div class="message-input-container">
+    <input type="text" id="message-input" placeholder="Type your message..." autocomplete="off" />
+    <button id="send-btn">Send</button>
+  </div>
+  
+  <!-- Back to lobby button -->
+  <div class="back-lobby-container">
+    <button id="back-to-lobby-btn">Back to Lobby</button>
+  </div>
 </div>
+
+<!-- Include Socket.IO library -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+
+<!-- Client-Side JavaScript -->
+<script>
+  const username = "{{ username }}";
+  const room_id = "{{ room_id }}";
+  const socket = io("ws://localhost:5002", {
+    query: {
+      username: username
+    }
+  });
+
+  function sendMessage() {
+    const messageInput = document.getElementById("message-input");
+    const message = messageInput.value.trim();
+    if (message !== "") {
+      socket.emit("send_message", {
+        room_id: room_id,
+        message: message,
+        username: username
+      });
+      messageInput.value = "";
+    }
+  }
+
+  // Connect to the server and join the room
+  socket.on("connect", () => {
+    socket.emit("join_room", { username: username, room_id: room_id });
+  });
+
+  // Handle successful room join
+  socket.on("join_room_success", (data) => {
+    console.log(data.message);
+  });
+
+  // Handle room join failure
+  socket.on("join_room_failure", (data) => {
+    window.location.href = "/unauthorized";
+  });
+
+  // Receive messages from the server
+  socket.on("receive_message", (data) => {
+    const chatMessages = document.getElementById("chat-messages");
+    const messageElement = document.createElement("div");
+    messageElement.classList.add("message");
+    messageElement.innerHTML = `<strong>${data.username}:</strong> ${data.message}`;
+    chatMessages.appendChild(messageElement);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+  });
+
+  // Send message to the server
+  document.getElementById("send-btn").addEventListener("click", sendMessage);
+  document.getElementById("message-input").addEventListener("keypress", function(e) {
+    if (e.key === 'Enter') {
+      sendMessage();
+    }
+  });
+
+  // Handle Back to Lobby button click
+  document.getElementById("back-to-lobby-btn").addEventListener("click", () => {
+    socket.emit("leave_room", { username: username, room_id: room_id });
+    // socket.disconnect();
+    window.location.href = "/lobby";
+  });
+
+  // Handle errors
+  socket.on("error", (data) => {
+    alert(data.message || "An error occurred.");
+  });
+</script>
 {% endblock %}
-    

@@ -6,7 +6,7 @@
 
   <h3>Users Online:</h3>
   <div class="user-list-container">
-    <ul id="userList" class="user-list"></ul>
+    <ul id="user-list" class="user-list"></ul>
   </div>
 </div>
 
@@ -19,11 +19,16 @@
     }
   });
 
-  const userList = document.getElementById("userList");
+  const userList = document.getElementById("user-list");
   let requestPending = false;
 
   socket.on("connect", () => {
     console.log("Connected to the lobby");
+    socket.emit("join_lobby", { username: username });
+  });
+
+  socket.on("disconnect", () => {
+    console.log("Disconnected from the server");
   });
 
   socket.on("update_user_list", (users) => {
@@ -49,7 +54,8 @@
         if (!requestPending) {
           requestPending = true;
           socket.emit("chat_request", {
-            to_user: user
+            to_user: user,
+            from_user: username,
           });
         } else {
           alert("You already have a pending chat request.");
@@ -70,7 +76,7 @@
 
   socket.on("chat_response", (data) => {
     if (data.accepted) {
-      // Redirect both users to the private chat room
+      // socket.disconnect();
       window.location.href = `/chat_room?room_id=${data.room_id}`;
     } else {
       alert(data.message || "Your chat request was declined.");
@@ -78,8 +84,5 @@
     }
   });
 
-  socket.on("disconnect", () => {
-    console.log("Disconnected from the server");
-  });
 </script>
 {% endblock %}

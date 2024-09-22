@@ -1,5 +1,6 @@
 from flask import Flask, request, jsonify
-from flask_socketio import SocketIO, emit
+from flask_socketio import SocketIO, emit, disconnect, join_room, leave_room
+
 
 from util import ChatServer
 
@@ -24,21 +25,43 @@ def check_username():
         return jsonify({"available": False}), 200
     return jsonify({"available": True}), 200
 
-# Handle new connections
+@app.route("/verify_room_access", methods=["POST"])
+def verify_room_access():
+    data = request.get_json()
+    room_id = data.get("room_id")
+    username = data.get("username")
+    chatroom = chat_server.chatrooms.get(room_id)
+    if chatroom and chatroom.is_user_authorized(username):
+        return jsonify({"authorized": True}), 200
+    else:
+        return jsonify({"authorized": False}), 200
+
 @socketio.on("connect")
 def handle_connect():
+    # update sid every time a new connection is made
     username = request.args.get("username")
     if not username:
         return False  # Reject the connection
-    chat_server.add_user(request.sid, username)
-    emit("update_user_list", chat_server.list_usernames(), broadcast=True)
+    user = chat_server.get_user_by_username(username)
+    if user:
+        chat_server.update_user_sid(user, request.sid)
 
-# Handle disconnections
-@socketio.on("disconnect")
-def handle_disconnect():
-    if chat_server.user_is_connected(request.sid):
-        chat_server.remove_user(request.sid)
-        emit("update_user_list", chat_server.list_usernames(), broadcast=True)
+# @socketio.on("disconnect")
+# def handle_disconnect():
+#     if chat_server.user_is_connected(request.sid):
+#         chat_server.remove_user(request.sid)
+#         emit("update_user_list", chat_server.list_users_in_lobby(), broadcast=True)
+#     pass
+
+@socketio.on("join_lobby")
+def handle_join_lobby(data):
+    username = data.get("username")
+    if not username:
+        return False  # Reject the connection
+    user = chat_server.get_user_by_username(username)
+    if not user:
+        chat_server.add_user(request.sid, username)
+    emit("update_user_list", chat_server.list_users_in_lobby(), broadcast=True)
 
 # Handle chat request
 @socketio.on("chat_request")
@@ -74,7 +97,7 @@ def handle_chat_request(data):
 # Handle chat response
 @socketio.on("chat_response")
 def handle_chat_response(data):
-    from_sid = request.sid  # TODO THIS CAUSES ISSUES
+    from_sid = request.sid
     from_user = chat_server.get_user_by_sid(from_sid)
     to_username = data.get("from_user")  # The user who sent the request
     accepted = data.get("accepted")
@@ -113,16 +136,70 @@ def handle_chat_response(data):
                 room=from_user.sid
             )
 
-@app.route("/verify_room_access", methods=["POST"])
-def verify_room_access():
-    data = request.get_json()
-    room_id = data.get("room_id")
+@socketio.on("join_room")
+def handle_join_room(data):
     username = data.get("username")
+    room_id = data.get("room_id")
+    user = chat_server.get_user_by_sid(request.sid)
     chatroom = chat_server.chatrooms.get(room_id)
-    if chatroom and chatroom.is_user_authorized(username):
-        return jsonify({"authorized": True}), 200
+
+    if user and chatroom and chatroom.is_user_authorized(username):
+        user.in_room = True
+        join_room(room_id)
+        emit("join_room_success", {"message": "Joined room successfully"})
+        emit("update_user_list", chat_server.list_users_in_lobby(), broadcast=True)
     else:
-        return jsonify({"authorized": False}), 200
+        emit("join_room_failure", {"message": "Unauthorized access"})
+
+@socketio.on("leave_room")
+def handle_leave_room(data):
+    username = data.get("username")
+    room_id = data.get("room_id")
+    user = chat_server.get_user_by_sid(request.sid)
+    chatroom = chat_server.chatrooms.get(room_id)
+
+    if user and chatroom and chatroom.is_user_authorized(username):
+        emit(
+            "receive_message",
+            {"message": "has left the chat", "username": username},
+            room=room_id
+        )
+        user.in_room = False
+        leave_room(room_id)
+        emit("update_user_list", chat_server.list_users_in_lobby(), broadcast=True)
+
+@socketio.on("send_message")
+def handle_send_message(data):
+    room_id = data.get("room_id")
+    message = data.get("message")
+    username = data.get("username")
+    user = chat_server.get_user_by_sid(request.sid)
+    chatroom = chat_server.chatrooms.get(room_id)
+
+    if user and chatroom and chatroom.is_user_authorized(username):
+        emit(
+            "receive_message", {"message": message, "username": username}, room=room_id
+        )
+    else:
+        emit("error", {"message": "Unauthorized"})
+
+# @socketio.on("disconnect")
+# def handle_disconnect():
+#     user = chat_server.get_user_by_sid(request.sid)
+#     if user:
+#         for room_id in chat_server.chatrooms.keys():
+#             leave_room(room_id)
+#         chat_server.remove_user(user.sid)
+#         emit("update_user_list", chat_server.list_usernames(), broadcast=True)
+
+
+# @socketio.on("leave_lobby")
+# def handle_leave_lobby(data):
+#     username = data.get("username")
+#     user = chat_server.get_user_by_sid(request.sid)
+#     if user and user.username == username:
+#         chat_server.remove_user(user.sid)
+#         emit("update_user_list", chat_server.list_users_in_lobby(), broadcast=True)
 
 
 if __name__ == "__main__":

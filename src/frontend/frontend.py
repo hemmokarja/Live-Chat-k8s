@@ -1,4 +1,5 @@
 import requests
+import logging
 from flask import Flask, render_template, request, session, redirect, url_for
 
 BACKEND_URL = "http://backend_service:5002"
@@ -38,7 +39,7 @@ def chat_room():
     username = session.get("username")
     if not room_id or not username:
         return redirect(url_for("lobby"))
-    
+
     response = requests.post(
         f"{BACKEND_URL}/verify_room_access",
         json={"room_id": room_id, "username": username}
@@ -48,6 +49,10 @@ def chat_room():
         return render_template("unauthorized.html"), 403
 
     return render_template("chat_room.html", room_id=room_id, username=username)
+
+@app.route("/unauthorized")
+def unauthorized():
+    return render_template("unauthorized.html"), 403
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5001)
