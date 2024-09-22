@@ -34,11 +34,20 @@ def lobby():
 
 @app.route("/chat_room")
 def chat_room():
-    room = request.args.get("room")
+    room_id = request.args.get("room_id")
     username = session.get("username")
-    if not room or not username:
+    if not room_id or not username:
         return redirect(url_for("lobby"))
-    return render_template("chat_room.html", room=room, username=username)
+    
+    response = requests.post(
+        f"{BACKEND_URL}/verify_room_access",
+        json={"room_id": room_id, "username": username}
+    )
+    data = response.json()
+    if not data.get("authorized"):
+        return render_template("unauthorized.html"), 403
+
+    return render_template("chat_room.html", room_id=room_id, username=username)
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5001)

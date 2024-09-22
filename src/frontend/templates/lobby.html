@@ -71,7 +71,7 @@
   socket.on("chat_response", (data) => {
     if (data.accepted) {
       // Redirect both users to the private chat room
-      window.location.href = `/chat_room?room=${data.room}`;
+      window.location.href = `/chat_room?room_id=${data.room_id}`;
     } else {
       alert(data.message || "Your chat request was declined.");
       requestPending = false;

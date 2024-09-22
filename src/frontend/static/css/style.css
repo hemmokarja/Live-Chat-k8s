@@ -82,6 +82,8 @@ body {
   transition: background-color 0.3s ease;
   font-weight: 500;
   font-family: "Roboto", sans-serif;
+  text-decoration: none;
+  text-align: center;
 }
 
 .submit-btn:hover {

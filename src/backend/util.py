@@ -19,12 +19,15 @@ class ChatRoom:
         self.id = str(uuid.uuid4())
         self.users = [user1, user2]
 
+    def is_user_authorized(self, username):
+        return username in [u.username for u in self.users]
+
 
 class ChatServer:
     def __init__(self):
         self.connected_users = {}  # {sid: User}
         self.pending_requests = {}  # {from_sid: ChatRequest}
-        self.rooms = {}  # {room_id: ChatRoom}
+        self.chatrooms = {}  # {room_id: ChatRoom}
 
     def add_user(self, sid, username):
         user = User(sid, username)
@@ -68,11 +71,11 @@ class ChatServer:
             self.remove_pending_request(from_sid)
 
     def create_room(self, user1, user2):
-        room = ChatRoom(user1, user2)
-        self.rooms[room.id] = room
+        chatroom = ChatRoom(user1, user2)
+        self.chatrooms[chatroom.id] = chatroom
         user1.in_room = True
         user2.in_room = True
-        return room
+        return chatroom
     
     def list_usernames(self):
         return [

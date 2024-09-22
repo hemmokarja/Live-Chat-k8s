@@ -96,12 +96,12 @@ def handle_chat_response(data):
                 # Notify both users to join the room
                 emit(
                     "chat_response",
-                    {"accepted": True, "room": room.id},
+                    {"accepted": True, "room_id": room.id},
                     room=to_user.sid
                 )
                 emit(
                     "chat_response",
-                    {"accepted": True, "room": room.id},
+                    {"accepted": True, "room_id": room.id},
                     room=from_user.sid
                 )
             else:
@@ -118,6 +118,18 @@ def handle_chat_response(data):
                 {"accepted": False, "message": "No pending chat request found"},
                 room=from_user.sid
             )
+
+@app.route("/verify_room_access", methods=["POST"])
+def verify_room_access():
+    data = request.get_json()
+    room_id = data.get("room_id")
+    username = data.get("username")
+    room = chat_server.rooms.get(room_id)
+    if room and room.is_user_authorized(username):
+        return jsonify({"authorized": True}), 200
+    else:
+        return jsonify({"authorized": False}), 200
+
 
 if __name__ == "__main__":
     socketio.run(app, host="0.0.0.0", port=5002)
