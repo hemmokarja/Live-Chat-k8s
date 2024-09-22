@@ -1,3 +1,8 @@
+/* General font family */
+body {
+  font-family: "Roboto", sans-serif;
+}
+
 /* Styling for form container */
 .form-container {
   max-width: 400px;
@@ -7,6 +12,7 @@
   background-color: #f7f7f7;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
   text-align: center; /* Center align text inside the form */
+  font-family: "Roboto", sans-serif;  /* Applying Roboto font */
 }
 
 /* Centering the header */
@@ -15,6 +21,7 @@
   color: #333;
   margin-bottom: 20px;
   font-size: 24px;
+  font-weight: 500;
 }
 
 /* Styling for h3 inside the form */
@@ -22,6 +29,7 @@
   text-align: center;
   color: #555;
   margin-bottom: 15px;
+  font-weight: 400;
 }
 
 /* Styling input group */
@@ -34,6 +42,7 @@
   font-size: 14px;
   color: #555;
   margin-bottom: 5px;
+  font-weight: 500;
 }
 
 .input-group input {
@@ -43,6 +52,7 @@
   border-radius: 5px;
   box-sizing: border-box;
   font-size: 16px;
+  font-family: "Roboto", sans-serif;
 }
 
 .input-group input:focus {
@@ -70,6 +80,8 @@
   font-size: 16px;
   cursor: pointer;
   transition: background-color 0.3s ease;
+  font-weight: 500;
+  font-family: "Roboto", sans-serif;
 }
 
 .submit-btn:hover {
@@ -81,9 +93,7 @@
   box-shadow: 0 0 5px rgba(41, 128, 185, 0.5);
 }
 
-
-
-  /* General styling for lobby */
+/* General styling for lobby */
 .lobby-container {
   max-width: 600px;
   margin: 50px auto;
@@ -91,21 +101,32 @@
   border-radius: 10px;
   background-color: #f0f0f0;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  font-family: "Roboto", sans-serif;
 }
 
 .lobby-container h2 {
   text-align: center;
   color: #333;
+  font-weight: 500;
+}
+
+.lobby-container h3 {
+  font-size: 16px;
+  font-weight: 300;
+  color: #555;
+  margin-bottom: 15px;
 }
 
 .lobby-container p {
   text-align: center;
   color: #555;
+  font-weight: 400;
 }
 
 .username {
   font-weight: bold;
   color: #2c3e50;
+  font-family: "Roboto", sans-serif;
 }
 
 /* Styling the user list */
@@ -131,6 +152,7 @@
   border: 1px solid #ddd;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   color: #333;
+  font-family: "Roboto", sans-serif;
 }
 
 .user-item:hover {
