@@ -1,7 +1,6 @@
 from flask import Flask, request, jsonify
 from flask_socketio import SocketIO, emit, disconnect, join_room, leave_room
 
-
 from util import ChatServer
 
 app = Flask(__name__)
@@ -62,7 +61,7 @@ def handle_join_lobby(data):
     user = chat_server.get_user(username)
     if not user:
         chat_server.add_user(username)
-        join_room(username)
+    join_room(username)
     emit("update_user_list", chat_server.list_users_in_lobby(), broadcast=True)
 
 # Handle chat request
