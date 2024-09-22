@@ -93,17 +93,12 @@ def handle_chat_response(data):
             if accepted:
                 # Create a chat room
                 room = chat_server.create_room(to_user, from_user)
-                # Notify both users to join the room
-                emit(
-                    "chat_response",
-                    {"accepted": True, "room_id": room.id},
-                    room=to_user.sid
-                )
-                emit(
-                    "chat_response",
-                    {"accepted": True, "room_id": room.id},
-                    room=from_user.sid
-                )
+                for user in [to_user, from_user]:
+                    emit(
+                        "chat_response",
+                        {"accepted": True, "room_id": room.id},
+                        room=user.sid
+                    )
             else:
                 # Notify the requesting user that the request was declined
                 emit(
@@ -112,7 +107,6 @@ def handle_chat_response(data):
                     room=to_user.sid
                 )
         else:
-            # No pending request found
             emit(
                 "chat_response",
                 {"accepted": False, "message": "No pending chat request found"},
