@@ -124,8 +124,8 @@ def verify_room_access():
     data = request.get_json()
     room_id = data.get("room_id")
     username = data.get("username")
-    room = chat_server.rooms.get(room_id)
-    if room and room.is_user_authorized(username):
+    chatroom = chat_server.chatrooms.get(room_id)
+    if chatroom and chatroom.is_user_authorized(username):
         return jsonify({"authorized": True}), 200
     else:
         return jsonify({"authorized": False}), 200
