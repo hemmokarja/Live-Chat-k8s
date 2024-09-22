@@ -2,8 +2,7 @@ import uuid
 
 
 class User:
-    def __init__(self, sid, username):
-        self.sid = sid
+    def __init__(self, username):
         self.username = username
         self.in_room = False
 
@@ -25,50 +24,45 @@ class ChatRoom:
 
 class ChatServer:
     def __init__(self):
-        self.connected_users = {}  # {sid: User}
-        self.pending_requests = {}  # {from_sid: ChatRequest}
+        self.connected_users = {}  # {username: User}
+        self.pending_requests = {}  # {from_username: ChatRequest}
         self.chatrooms = {}  # {room_id: ChatRoom}
 
-    def add_user(self, sid, username):
-        user = User(sid, username)
-        self.connected_users[sid] = user
+    def add_user(self, username):
+        user = User(username)
+        self.connected_users[username] = user
         return user
 
-    def remove_user(self, sid):
-        if sid in self.connected_users:
-            user = self.connected_users.pop(sid)
-            # Remove any pending requests involving this user
-            self.cancel_pending_requests(user)
-            return user
+    def remove_user(self, username):
+        if username in self.connected_users:
+            _ = self.connected_users.pop(username)
+            self.cancel_pending_requests(username)
 
-    def get_user_by_username(self, username):
+    def get_user(self, username):
         for user in self.connected_users.values():
             if user.username == username:
                 return user
         return None
 
-    def get_user_by_sid(self, sid):
-        return self.connected_users.get(sid)
-
     def add_pending_request(self, from_user, to_user):
         request = ChatRequest(from_user, to_user)
-        self.pending_requests[from_user.sid] = request
+        self.pending_requests[from_user.username] = request
         return request
 
-    def get_pending_request(self, from_sid):
-        return self.pending_requests.get(from_sid)
+    def get_pending_request(self, from_username):
+        return self.pending_requests.get(from_username)
     
-    def remove_pending_request(self, from_sid):
-        if from_sid in self.pending_requests:
-            del self.pending_requests[from_sid]
+    def remove_pending_request(self, from_username):
+        if from_username in self.pending_requests:
+            del self.pending_requests[from_username]
 
-    def cancel_pending_requests(self, user):
+    def cancel_pending_requests(self, from_username):
         to_remove = []
-        for from_sid, request in self.pending_requests.items():
-            if request.from_user == user or request.to_user == user:
-                to_remove.append(from_sid)
-        for from_sid in to_remove:
-            self.remove_pending_request(from_sid)
+        for from_username, request in self.pending_requests.items():
+            if request.from_user == from_username or request.to_user == from_username:
+                to_remove.append(from_username)
+        for from_username in to_remove:
+            self.remove_pending_request(from_username)
 
     def create_room(self, user1, user2):
         chatroom = ChatRoom(user1, user2)
@@ -82,10 +76,5 @@ class ChatServer:
             user.username for user in self.connected_users.values() if not user.in_room
         ]
 
-    def user_is_connected(self, sid):
-        return sid in self.connected_users
-    
-    def update_user_sid(self, user, new_sid):
-        del self.connected_users[user.sid]
-        user.sid = new_sid
-        self.connected_users[new_sid] = user
+    def user_is_connected(self, username):
+        return username in self.connected_users

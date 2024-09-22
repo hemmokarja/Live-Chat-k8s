@@ -70,6 +70,7 @@
     const accept = confirm(`User ${fromUser} wants to chat with you. Accept?`);
     socket.emit("chat_response", {
       from_user: fromUser,
+      to_user: username,
       accepted: accept
     });
   });
@@ -77,6 +78,7 @@
   socket.on("chat_response", (data) => {
     if (data.accepted) {
       // socket.disconnect();
+      requestPending = false 
       window.location.href = `/chat_room?room_id=${data.room_id}`;
     } else {
       alert(data.message || "Your chat request was declined.");
