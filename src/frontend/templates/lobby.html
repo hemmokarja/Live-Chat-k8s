@@ -4,7 +4,7 @@
   <h2>Chat Lobby</h2>
   <p>Welcome, <span class="username">{{ username }}</span>!</p>
 
-  <h3>Other Connected Users:</h3>
+  <h3>Users Online:</h3>
   <div class="user-list-container">
     <ul id="userList" class="user-list"></ul>
   </div>
@@ -28,24 +28,34 @@
 
   socket.on("update_user_list", (users) => {
     userList.innerHTML = "";
-    users.forEach((user) => {
-      if (user !== username) {
-        const li = document.createElement("li");
-        li.classList.add("user-item");
-        li.innerText = user;
-        li.style.cursor = "pointer";
-        li.addEventListener("click", () => {
-          if (!requestPending) {
-            requestPending = true;
-            socket.emit("chat_request", {
-              to_user: user
-            });
-          } else {
-            alert("You already have a pending chat request.");
-          }
-        });
-        userList.appendChild(li);
-      }
+
+    // **Add the current user to the top of the list**
+    const currentUserLi = document.createElement("li");
+    currentUserLi.classList.add("user-item");
+    currentUserLi.innerText = `${username} (You)`;
+    currentUserLi.style.fontWeight = "bold";
+    userList.appendChild(currentUserLi);
+
+    // **Filter out the current user from the rest of the users**
+    const otherUsers = users.filter(user => user !== username);
+
+    // **Add the other users to the list**
+    otherUsers.forEach((user) => {
+      const li = document.createElement("li");
+      li.classList.add("user-item");
+      li.innerText = user;
+      li.style.cursor = "pointer";
+      li.addEventListener("click", () => {
+        if (!requestPending) {
+          requestPending = true;
+          socket.emit("chat_request", {
+            to_user: user
+          });
+        } else {
+          alert("You already have a pending chat request.");
+        }
+      });
+      userList.appendChild(li);
     });
   });
 
