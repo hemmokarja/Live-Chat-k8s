@@ -6,7 +6,6 @@ BACKEND_URL = "http://backend_service:5002"
 app = Flask(__name__)
 app.config["SECRET_KEY"] = "your_secret_key"
 
-
 @app.route("/", methods=["GET"])
 def index():
     session.clear()  # Clear session when returning to the landing page
@@ -32,6 +31,14 @@ def lobby():
     if not username:
         return redirect(url_for("index"))
     return render_template("lobby.html", username=username)
+
+@app.route("/chat_room")
+def chat_room():
+    room = request.args.get("room")
+    username = session.get("username")
+    if not room or not username:
+        return redirect(url_for("lobby"))
+    return render_template("chat_room.html", room=room, username=username)
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5001)

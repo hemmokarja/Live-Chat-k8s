@@ -4,7 +4,7 @@
   <h2>Chat Lobby</h2>
   <p>Welcome, <span class="username">{{ username }}</span>!</p>
 
-  <h3>Connected Users:</h3>
+  <h3>Other Connected Users:</h3>
   <div class="user-list-container">
     <ul id="userList" class="user-list"></ul>
   </div>
@@ -20,6 +20,7 @@
   });
 
   const userList = document.getElementById("userList");
+  let requestPending = false;
 
   socket.on("connect", () => {
     console.log("Connected to the lobby");
@@ -28,11 +29,43 @@
   socket.on("update_user_list", (users) => {
     userList.innerHTML = "";
     users.forEach((user) => {
-      const li = document.createElement("li");
-      li.classList.add("user-item");
-      li.innerText = user;
-      userList.appendChild(li);
+      if (user !== username) {
+        const li = document.createElement("li");
+        li.classList.add("user-item");
+        li.innerText = user;
+        li.style.cursor = "pointer";
+        li.addEventListener("click", () => {
+          if (!requestPending) {
+            requestPending = true;
+            socket.emit("chat_request", {
+              to_user: user
+            });
+          } else {
+            alert("You already have a pending chat request.");
+          }
+        });
+        userList.appendChild(li);
+      }
     });
+  });
+
+  socket.on("chat_request", (data) => {
+    const fromUser = data.from_user;
+    const accept = confirm(`User ${fromUser} wants to chat with you. Accept?`);
+    socket.emit("chat_response", {
+      from_user: fromUser,
+      accepted: accept
+    });
+  });
+
+  socket.on("chat_response", (data) => {
+    if (data.accepted) {
+      // Redirect both users to the private chat room
+      window.location.href = `/chat_room?room=${data.room}`;
+    } else {
+      alert(data.message || "Your chat request was declined.");
+      requestPending = false;
+    }
   });
 
   socket.on("disconnect", () => {
@@ -40,3 +73,4 @@
   });
 </script>
 {% endblock %}
+  
