@@ -8,6 +8,10 @@
   <div class="user-list-container">
     <ul id="user-list" class="user-list"></ul>
   </div>
+
+  <div class="exit-container">
+    <button id="leave-lobby-btn" class="exit-btn">Back to Lobby</button>
+  </div>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
@@ -84,6 +88,11 @@
       alert(data.message || "Your chat request was declined.");
       requestPending = false;
     }
+  });
+
+  document.getElementById("leave-lobby-btn").addEventListener("click", () => {
+    socket.emit("leave_server", { username: username });
+    window.location.href = "/";
   });
 
 </script>

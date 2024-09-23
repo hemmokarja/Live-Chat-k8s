@@ -245,6 +245,9 @@ body {
   cursor: pointer;
   transition: background-color 0.3s ease;
   font-weight: 500;
+  font-family: "Roboto", sans-serif;
+  text-decoration: none;
+  text-align: center;
 }
 
 #send-btn:hover {
@@ -257,12 +260,12 @@ body {
 }
 
 /* Back to Lobby Button Styling */
-.back-lobby-container {
+.exit-container {
   text-align: center;
   margin-top: 20px;
 }
 
-#back-to-lobby-btn {
+.exit-btn {
   background-color: #3498db;
   color: white;
   padding: 10px 20px;
@@ -272,13 +275,16 @@ body {
   cursor: pointer;
   transition: background-color 0.3s ease;
   font-weight: 500;
+  font-family: "Roboto", sans-serif;
+  text-decoration: none;
+  text-align: center;
 }
 
-#back-to-lobby-btn:hover {
+.exit-btn:hover {
   background-color: #2980b9;
 }
 
-#back-to-lobby-btn:focus {
+.exit-btn:focus {
   outline: none;
   box-shadow: 0 0 5px rgba(41, 128, 185, 0.5);
 }

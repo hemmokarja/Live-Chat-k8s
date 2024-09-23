@@ -16,8 +16,8 @@
   </div>
   
   <!-- Back to lobby button -->
-  <div class="back-lobby-container">
-    <button id="back-to-lobby-btn">Back to Lobby</button>
+  <div class="exit-container">
+    <button id="leave-room-btn" class="exit-btn">Back to Lobby</button>
   </div>
 </div>
 
@@ -81,9 +81,8 @@
   });
 
   // Handle Back to Lobby button click
-  document.getElementById("back-to-lobby-btn").addEventListener("click", () => {
+  document.getElementById("leave-room-btn").addEventListener("click", () => {
     socket.emit("leave_room", { username: username, room_id: room_id });
-    // socket.disconnect();
     window.location.href = "/lobby";
   });
 

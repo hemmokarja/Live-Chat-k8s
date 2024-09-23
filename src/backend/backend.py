@@ -1,5 +1,5 @@
 from flask import Flask, request, jsonify
-from flask_socketio import SocketIO, emit, disconnect, join_room, leave_room
+from flask_socketio import SocketIO, emit, join_room, leave_room
 
 from util import ChatServer
 
@@ -184,23 +184,13 @@ def handle_send_message(data):
     else:
         emit("error", {"message": "Unauthorized"})
 
-# @socketio.on("disconnect")
-# def handle_disconnect():
-#     user = chat_server.get_user_by_sid(request.sid)
-#     if user:
-#         for room_id in chat_server.chatrooms.keys():
-#             leave_room(room_id)
-#         chat_server.remove_user(user.sid)
-#         emit("update_user_list", chat_server.list_usernames(), broadcast=True)
-
-
-# @socketio.on("leave_lobby")
-# def handle_leave_lobby(data):
-#     username = data.get("username")
-#     user = chat_server.get_user_by_sid(request.sid)
-#     if user and user.username == username:
-#         chat_server.remove_user(user.sid)
-#         emit("update_user_list", chat_server.list_users_in_lobby(), broadcast=True)
+@socketio.on("leave_server")
+def handle_leave_server(data):
+    username = data.get("username")
+    user = chat_server.get_user(username)
+    if user:
+        chat_server.remove_user(username)
+        emit("update_user_list", chat_server.list_users_in_lobby(), broadcast=True)
 
 
 if __name__ == "__main__":
