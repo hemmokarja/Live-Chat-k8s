@@ -1,9 +1,10 @@
-from flask import Flask, request, jsonify
+from flask import Flask, jsonify, request
 from flask_socketio import SocketIO, emit, join_room, leave_room
-
 from util import ChatServer
 
 app = Flask(__name__)
+app.config['ENV'] = "production"
+app.config['DEBUG'] = False
 app.config["SECRET_KEY"] = "your_secret_key"
 socketio = SocketIO(
     app, cors_allowed_origins=["http://localhost:5001", "http://127.0.0.1:5001"]

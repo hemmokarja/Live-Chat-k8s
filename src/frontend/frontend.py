@@ -1,11 +1,13 @@
 import requests
-import logging
-from flask import Flask, render_template, request, session, redirect, url_for
+from flask import Flask, redirect, render_template, request, session, url_for
 
 BACKEND_URL = "http://backend_service:5002"
 
 app = Flask(__name__)
+app.config['ENV'] = "production"
+app.config['DEBUG'] = False
 app.config["SECRET_KEY"] = "your_secret_key"
+
 
 @app.route("/", methods=["GET"])
 def index():
