@@ -3,6 +3,10 @@ const chatMessages = document.getElementById("chat-messages");
 const sendBtn = document.getElementById("send-btn");
 const leaveRoomBtn = document.getElementById("leave-room-btn");
 
+// Get other user's name from session storage
+const other_user = sessionStorage.getItem("other_user");
+document.getElementById("chat-other-user").textContent = other_user;
+
 // Initialize the socket connection
 const socket = io("ws://localhost:5002", {
     query: { username: username }

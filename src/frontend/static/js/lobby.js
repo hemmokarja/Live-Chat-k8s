@@ -75,6 +75,7 @@ socket.on("chat_request", (data) => {
 // Handle the response to a chat request
 socket.on("chat_response", (data) => {
     if (data.accepted) {
+        sessionStorage.setItem("other_user", data.other_user);
         // Redirect to the chat room
         requestPending = false;
         window.location.href = `/chat_room?room_id=${data.room_id}`;

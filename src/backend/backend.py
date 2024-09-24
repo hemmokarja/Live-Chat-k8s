@@ -112,16 +112,19 @@ def handle_chat_response(data):
     if to_user and from_user:
         pending_request = chat_server.get_pending_request(to_user.username)
         if pending_request and pending_request.to_user == from_user:
-            # Remove pending request
             chat_server.remove_pending_request(to_user.username)
             if accepted:
                 room = chat_server.create_room(to_user, from_user)
-                for user in [to_user, from_user]:
-                    emit(
-                        "chat_response",
-                        {"accepted": True, "room_id": room.id},
-                        room=user.username
-                    )
+                emit(
+                    "chat_response",
+                    {"accepted": True, "room_id": room.id, "other_user": from_user.username},
+                    room=to_user.username
+                )
+                emit(
+                    "chat_response",
+                    {"accepted": True, "room_id": room.id, "other_user": to_user.username},
+                    room=from_user.username
+                )
             else:
                 # Notify the requesting user that the request was declined
                 emit(
