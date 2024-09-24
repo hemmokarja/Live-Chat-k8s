@@ -1,99 +1,24 @@
 {% extends "base.html" %}
-{% block content %}
-<div class="lobby-container">
-  <h2>Chat Lobby</h2>
-  <p>Welcome, <span class="username">{{ username }}</span>!</p>
 
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/lobby.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="form-container">
+  <h2>Welcome, <span>{{ username }}</span>!</h2>
   <h3>Users Online:</h3>
   <div class="user-list-container">
-    <ul id="user-list" class="user-list"></ul>
+    <ul id="user-list" class="user-list" role="list"></ul>
   </div>
 
   <div class="exit-container">
-    <button id="leave-lobby-btn" class="exit-btn">Back to Lobby</button>
+    <button id="leave-lobby-btn" class="exit-btn">Leave Lobby</button>
   </div>
 </div>
-
-<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
 <script>
   const username = "{{ username }}";
-  const socket = io("ws://localhost:5002", {
-    query: {
-      username: username
-    }
-  });
-
-  const userList = document.getElementById("user-list");
-  let requestPending = false;
-
-  socket.on("connect", () => {
-    console.log("Connected to the lobby");
-    socket.emit("join_lobby", { username: username });
-  });
-
-  socket.on("disconnect", () => {
-    console.log("Disconnected from the server");
-  });
-
-  socket.on("update_user_list", (users) => {
-    userList.innerHTML = "";
-
-    // **Add the current user to the top of the list**
-    const currentUserLi = document.createElement("li");
-    currentUserLi.classList.add("user-item");
-    currentUserLi.innerText = `${username} (You)`;
-    currentUserLi.style.fontWeight = "bold";
-    userList.appendChild(currentUserLi);
-
-    // **Filter out the current user from the rest of the users**
-    const otherUsers = users.filter(user => user !== username);
-
-    // **Add the other users to the list**
-    otherUsers.forEach((user) => {
-      const li = document.createElement("li");
-      li.classList.add("user-item");
-      li.innerText = user;
-      li.style.cursor = "pointer";
-      li.addEventListener("click", () => {
-        if (!requestPending) {
-          requestPending = true;
-          socket.emit("chat_request", {
-            to_user: user,
-            from_user: username,
-          });
-        } else {
-          alert("You already have a pending chat request.");
-        }
-      });
-      userList.appendChild(li);
-    });
-  });
-
-  socket.on("chat_request", (data) => {
-    const fromUser = data.from_user;
-    const accept = confirm(`User ${fromUser} wants to chat with you. Accept?`);
-    socket.emit("chat_response", {
-      from_user: fromUser,
-      to_user: username,
-      accepted: accept
-    });
-  });
-
-  socket.on("chat_response", (data) => {
-    if (data.accepted) {
-      // socket.disconnect();
-      requestPending = false 
-      window.location.href = `/chat_room?room_id=${data.room_id}`;
-    } else {
-      alert(data.message || "Your chat request was declined.");
-      requestPending = false;
-    }
-  });
-
-  document.getElementById("leave-lobby-btn").addEventListener("click", () => {
-    socket.emit("leave_server", { username: username });
-    window.location.href = "/";
-  });
-
 </script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+<script src="{{ url_for('static', filename='js/lobby.js') }}"></script>
 {% endblock %}
