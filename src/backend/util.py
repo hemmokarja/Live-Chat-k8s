@@ -76,9 +76,6 @@ class ChatServer:
             user.username for user in self.connected_users.values() if not user.in_room
         ]
 
-    def user_is_connected(self, username):
-        return username in self.connected_users
-
 
 def user_authorized_in_room(username, room_id, chat_server):
     user = chat_server.get_user(username)

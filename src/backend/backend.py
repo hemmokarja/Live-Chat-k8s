@@ -150,7 +150,8 @@ def handle_leave_room(data):
         emit(
             "receive_message",
             {"message": "has left the chat", "username": username},
-            room=room_id
+            room=room_id,
+            include_self=False
         )
         user.in_room = False
         leave_room(room_id)
@@ -163,10 +164,25 @@ def handle_send_message(data):
     username = data.get("username")
     if util.user_authorized_in_room(username, room_id, chat_server):
         emit(
-            "receive_message", {"message": message, "username": username}, room=room_id
+            "receive_message",
+            {"message": message, "username": username},
+            room=room_id,
+            include_self=False
         )
     else:
         emit("error", {"message": "Unauthorized"})
+
+@socketio.on("share_public_key")
+def handle_share_public_key(data):
+    room_id = data.get("room_id")
+    public_key = data.get("public_key")
+    if room_id and public_key:
+        emit(
+            "receive_public_key",
+            {"public_key": public_key},
+            room=room_id,
+            include_self=False,
+        )
 
 @socketio.on("leave_server")
 def handle_leave_server(data):
