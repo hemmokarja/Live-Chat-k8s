@@ -222,27 +222,36 @@ socket.on("receive_public_key", async (data) => {
     otherUserPublicKey = await importPublicKey(publicKeyData.buffer);
 });
 
-// Receive an encrypted message and decrypt it
+// Receive an encrypted message or system message
 socket.on("receive_message", async (data) => {
-    const encryptedAESKey = new Uint8Array(data.aes_key);
-    const iv = new Uint8Array(data.iv);
-    const encryptedMessage = new Uint8Array(data.message);
+    if (data.type === "system") {
+        // Handle the system message (e.g., user has left the room)
+        const messageElement = document.createElement("div");
+        messageElement.classList.add("message", "system-message");
+        messageElement.innerHTML = `<em>${data.username} ${data.message}</em>`;
+        chatMessages.appendChild(messageElement);
+        scrollToBottom();
+    } else {
+        const encryptedAESKey = new Uint8Array(data.aes_key);
+        const iv = new Uint8Array(data.iv);
+        const encryptedMessage = new Uint8Array(data.message);
 
-    // Step 1: Decrypt the AES key with your private RSA key
-    const decryptedAESKey = await decryptAESKey(encryptedAESKey, privateKey);
+        // Step 1: Decrypt the AES key with your private RSA key
+        const decryptedAESKey = await decryptAESKey(encryptedAESKey, privateKey);
 
-    // Step 2: Import the decrypted AES key
-    const aesKey = await importAESKey(decryptedAESKey)
+        // Step 2: Import the decrypted AES key
+        const aesKey = await importAESKey(decryptedAESKey);
 
-    // Step 3: Decrypt the message with AES
-    const decryptedMessage = await decryptWithAES(encryptedMessage, iv, aesKey);
+        // Step 3: Decrypt the message with AES
+        const decryptedMessage = await decryptWithAES(encryptedMessage, iv, aesKey);
 
-    // Step 4: Display the decrypted message
-    const messageElement = document.createElement("div");
-    messageElement.classList.add("message");
-    messageElement.innerHTML = `<strong>${data.username}:</strong> ${decryptedMessage}`;
-    chatMessages.appendChild(messageElement);
-    scrollToBottom();
+        // Step 4: Display the decrypted message
+        const messageElement = document.createElement("div");
+        messageElement.classList.add("message");
+        messageElement.innerHTML = `<strong>${data.username}:</strong> ${decryptedMessage}`;
+        chatMessages.appendChild(messageElement);
+        scrollToBottom();
+    }
 });
 
 

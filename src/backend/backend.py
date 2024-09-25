@@ -149,7 +149,7 @@ def handle_leave_room(data):
     if util.user_authorized_in_room(username, room_id, chat_server):
         emit(
             "receive_message",
-            {"message": "has left the chat", "username": username},
+            {"message": "has left the chat", "username": username, "type": "system"},
             room=room_id,
             include_self=False
         )
@@ -172,6 +172,7 @@ def handle_send_message(data):
                 "iv": iv,
                 "message": message,
                 "username": username,
+                "type": "user",
             },
             room=room_id,
             include_self=False
