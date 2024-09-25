@@ -33,7 +33,9 @@ async function generateKeyPair() {
 
 async function encryptAESKey(aesKey, otherUserPublicKey) {
     const ciphertext = await window.crypto.subtle.encrypt(
-        { name: "RSA-OAEP" },
+        {
+            name: "RSA-OAEP"
+        },
         otherUserPublicKey,
         aesKey
     );
@@ -43,7 +45,7 @@ async function encryptAESKey(aesKey, otherUserPublicKey) {
 async function decryptAESKey(encryptedAESKey, privateKey) {
     return await window.crypto.subtle.decrypt(
         {
-            name: "RSA-OAEP",
+            name: "RSA-OAEP"
         },
         privateKey,
         encryptedAESKey
@@ -58,7 +60,7 @@ async function generateAESKey() {
             name: "AES-GCM",
             length: 256,
         },
-        true, // extractable to allow exporting and sharing
+        true, // Extractable (can export the public key)
         ["encrypt", "decrypt"]
     );
 }
