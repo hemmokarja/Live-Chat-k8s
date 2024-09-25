@@ -160,12 +160,19 @@ def handle_leave_room(data):
 @socketio.on("send_message")
 def handle_send_message(data):
     room_id = data.get("room_id")
+    aes_key = data.get("aes_key")
+    iv = data.get("iv")
     message = data.get("message")
     username = data.get("username")
     if util.user_authorized_in_room(username, room_id, chat_server):
         emit(
             "receive_message",
-            {"message": message, "username": username},
+            {
+                "aes_key": aes_key,
+                "iv": iv,
+                "message": message,
+                "username": username,
+            },
             room=room_id,
             include_self=False
         )
