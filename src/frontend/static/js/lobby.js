@@ -47,8 +47,8 @@ socket.on("update_user_list", (users) => {
         if (!requestPending) {
             requestPending = true;
             socket.emit("chat_request", {
-            to_user: user,
-            from_user: username,
+                to_user: user,
+                from_user: username,
             });
         } else {
             alert("You already have a pending chat request.");

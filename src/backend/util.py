@@ -78,3 +78,11 @@ class ChatServer:
 
     def user_is_connected(self, username):
         return username in self.connected_users
+
+
+def user_authorized_in_room(username, room_id, chat_server):
+    user = chat_server.get_user(username)
+    chatroom = chat_server.chatrooms.get(room_id)
+    if user and chatroom and chatroom.is_user_authorized(username):
+        return True
+    return False

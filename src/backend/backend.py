@@ -1,10 +1,11 @@
 from flask import Flask, jsonify, request
 from flask_socketio import SocketIO, emit, join_room, leave_room
 from util import ChatServer
+import util
 
 app = Flask(__name__)
-app.config['ENV'] = "production"
-app.config['DEBUG'] = False
+app.config["ENV"] = "production"
+app.config["DEBUG"] = False
 app.config["SECRET_KEY"] = "your_secret_key"
 socketio = SocketIO(
     app, cors_allowed_origins=["http://localhost:5001", "http://127.0.0.1:5001"]
@@ -16,12 +17,12 @@ chat_server = ChatServer()
 def index():
     return "WebSocket server running!"
 
-# Check username availability
 @app.route("/check_username", methods=["POST"])
 def check_username():
     data = request.get_json()
     username = data.get("username")
-    if chat_server.get_user(username):
+    user = chat_server.get_user(username)
+    if user:
         return jsonify({"available": False}), 200
     return jsonify({"available": True}), 200
 
@@ -36,24 +37,6 @@ def verify_room_access():
     else:
         return jsonify({"authorized": False}), 200
 
-@socketio.on("connect")
-def handle_connect():
-    pass
-    # # update sid every time a new connection is made
-    # username = request.args.get("username")
-    # if not username:
-    #     return False  # Reject the connection
-    # user = chat_server.get_user_by_username(username)
-    # if user:
-    #     chat_server.update_user_sid(user, request.sid)
-
-# @socketio.on("disconnect")
-# def handle_disconnect():
-#     if chat_server.user_is_connected(request.sid):
-#         chat_server.remove_user(request.sid)
-#         emit("update_user_list", chat_server.list_users_in_lobby(), broadcast=True)
-#     pass
-
 @socketio.on("join_lobby")
 def handle_join_lobby(data):
     username = data.get("username")
@@ -65,9 +48,8 @@ def handle_join_lobby(data):
     join_room(username)
     emit("update_user_list", chat_server.list_users_in_lobby(), broadcast=True)
 
-# Handle chat request
 @socketio.on("chat_request")
-def handle_chat_request(data):
+def handle_chat_re_quest(data):
     from_username = data.get("from_user")
     to_username = data.get("to_user")
 
@@ -77,7 +59,7 @@ def handle_chat_request(data):
     if not from_user or not to_user:
         return
 
-    # Prevent multiple pending requests from the same user
+    # prevent multiple pending requests from the same user
     if from_user.username in chat_server.pending_requests:
         emit(
             "chat_response",
@@ -96,17 +78,15 @@ def handle_chat_request(data):
             room=from_user.username
         )
 
-# Handle chat response
 @socketio.on("chat_response")
 def handle_chat_response(data):
     from_username = data.get("to_user")
-    to_username = data.get("from_user")  # The user who sent the request
+    to_username = data.get("from_user")  # the user who sent the request
     accepted = data.get("accepted")
 
     if not from_username or not to_username:
         return
 
-    # Find the requesting user
     from_user = chat_server.get_user(from_username)
     to_user = chat_server.get_user(to_username)
 
@@ -118,16 +98,24 @@ def handle_chat_response(data):
                 room = chat_server.create_room(to_user, from_user)
                 emit(
                     "chat_response",
-                    {"accepted": True, "room_id": room.id, "other_user": from_user.username},
+                    {
+                        "accepted": True,
+                        "room_id": room.id,
+                        "other_user": from_user.username
+                    },
                     room=to_user.username
                 )
                 emit(
                     "chat_response",
-                    {"accepted": True, "room_id": room.id, "other_user": to_user.username},
+                    {
+                        "accepted": True,
+                        "room_id": room.id,
+                        "other_user": to_user.username
+                    },
                     room=from_user.username
                 )
             else:
-                # Notify the requesting user that the request was declined
+                # notify the requesting user that the request was declined
                 emit(
                     "chat_response",
                     {"accepted": False, "message": "Chat request declined"},
@@ -145,9 +133,7 @@ def handle_join_room(data):
     username = data.get("username")
     room_id = data.get("room_id")
     user = chat_server.get_user(username)
-    chatroom = chat_server.chatrooms.get(room_id)
-
-    if user and chatroom and chatroom.is_user_authorized(username):
+    if util.user_authorized_in_room(username, room_id, chat_server):
         user.in_room = True
         join_room(room_id)
         emit("join_room_success", {"message": "Joined room successfully"})
@@ -160,9 +146,7 @@ def handle_leave_room(data):
     username = data.get("username")
     room_id = data.get("room_id")
     user = chat_server.get_user(username)
-    chatroom = chat_server.chatrooms.get(room_id)
-
-    if user and chatroom and chatroom.is_user_authorized(username):
+    if util.user_authorized_in_room(username, room_id, chat_server):
         emit(
             "receive_message",
             {"message": "has left the chat", "username": username},
@@ -177,11 +161,7 @@ def handle_send_message(data):
     room_id = data.get("room_id")
     message = data.get("message")
     username = data.get("username")
-    
-    user = chat_server.get_user(username)
-    chatroom = chat_server.chatrooms.get(room_id)
-
-    if user and chatroom and chatroom.is_user_authorized(username):
+    if util.user_authorized_in_room(username, room_id, chat_server):
         emit(
             "receive_message", {"message": message, "username": username}, room=room_id
         )
