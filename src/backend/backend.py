@@ -1,7 +1,18 @@
+import os
+import logging
+import sys
+
 from flask import Flask, jsonify, request
 from flask_socketio import SocketIO, emit, join_room, leave_room
-from util import ChatServer
-import util
+from chat_manager import RedisChatManager
+
+logging.basicConfig(
+    level=logging.DEBUG,
+    format="[%(asctime)s][%(name)s][%(levelname)s] %(message)s",
+    handlers=[logging.StreamHandler(sys.stdout)]
+)
+
+logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
 app.config["ENV"] = "production"
@@ -10,8 +21,14 @@ app.config["SECRET_KEY"] = "your_secret_key"
 socketio = SocketIO(
     app, cors_allowed_origins=["http://localhost:5001", "http://127.0.0.1:5001"]
 )
-chat_server = ChatServer()
+manager = RedisChatManager(host="redis", port=6379, db=0)
 
+
+@app.route("/container_id", methods=["GET"])
+def container_id():
+    # TODO remove after not necessary
+    container_id = os.uname()[1]
+    return jsonify({"container_id": container_id}), 200
 
 @app.route("/")
 def index():
@@ -21,7 +38,7 @@ def index():
 def check_username():
     data = request.get_json()
     username = data.get("username")
-    user = chat_server.get_user(username)
+    user = manager.get_user(username)
     if user:
         return jsonify({"available": False}), 200
     return jsonify({"available": True}), 200
@@ -31,51 +48,60 @@ def verify_room_access():
     data = request.get_json()
     room_id = data.get("room_id")
     username = data.get("username")
-    chatroom = chat_server.chatrooms.get(room_id)
-    if chatroom and chatroom.is_user_authorized(username):
+    if manager.user_authorized_in_room(username, room_id):
         return jsonify({"authorized": True}), 200
     else:
-        return jsonify({"authorized": False}), 200
+        logger.warning(f"Failed room verification to room '{room_id}' by {username}")
+        return jsonify({"authorized": False}), 200    
 
 @socketio.on("join_lobby")
 def handle_join_lobby(data):
     username = data.get("username")
     if not username:
         return False  # Reject the connection
-    user = chat_server.get_user(username)
+    user = manager.get_user(username)
     if not user:
-        chat_server.add_user(username)
+        manager.add_user(username)
     join_room(username)
-    emit("update_user_list", chat_server.list_users_in_lobby(), broadcast=True)
+    emit("update_user_list", manager.list_users_in_lobby(), broadcast=True)
 
 @socketio.on("chat_request")
-def handle_chat_re_quest(data):
+def handle_chat_request(data):
     from_username = data.get("from_user")
     to_username = data.get("to_user")
 
-    from_user = chat_server.get_user(from_username)
-    to_user = chat_server.get_user(to_username)
+    from_user = manager.get_user(from_username)
+    to_user = manager.get_user(to_username)
 
-    if not from_user or not to_user:
+    if not from_user:
+        logger.warning(f"Could not find from_user '{from_user}'")
+        return
+
+    if not to_user:
+        logger.warning(f"Could not find to_user '{from_user}'")
         return
 
     # prevent multiple pending requests from the same user
-    if from_user.username in chat_server.pending_requests:
+    if manager.get_pending_request(from_username):
+        logger.warning(
+            f"User '{from_username}' attempted to request '{to_username}' to chat "
+            "while having a pending chat request"
+        )
         emit(
             "chat_response",
             {"accepted": False, "message": "You already have a pending chat request"},
-            room=from_user.username
+            room=from_username
         )
         return
 
-    if not to_user.in_room:
-        chat_server.add_pending_request(from_user, to_user)
-        emit("chat_request", {"from_user": from_user.username}, room=to_user.username)
+    if not to_user["in_room"]:
+        manager.add_pending_request(from_username, to_username)
+        emit("chat_request", {"from_user": from_username}, room=to_username)
     else:
         emit(
             "chat_response",
             {"accepted": False, "message": "User not available"},
-            room=from_user.username
+            room=from_username
         )
 
 @socketio.on("chat_response")
@@ -87,75 +113,73 @@ def handle_chat_response(data):
     if not from_username or not to_username:
         return
 
-    from_user = chat_server.get_user(from_username)
-    to_user = chat_server.get_user(to_username)
+    from_user = manager.get_user(from_username)
+    to_user = manager.get_user(to_username)
 
     if to_user and from_user:
-        pending_request = chat_server.get_pending_request(to_user.username)
-        if pending_request and pending_request.to_user == from_user:
-            chat_server.remove_pending_request(to_user.username)
+        pending_request = manager.get_pending_request(to_username)
+        if pending_request and pending_request["to_username"] == from_username:
+            manager.remove_pending_request(to_username)
             if accepted:
-                room = chat_server.create_room(to_user, from_user)
+                chatroom = manager.create_chatroom(to_user, from_user)
                 emit(
                     "chat_response",
                     {
                         "accepted": True,
-                        "room_id": room.id,
-                        "other_user": from_user.username
+                        "room_id": chatroom["id"],
+                        "other_user": from_username
                     },
-                    room=to_user.username
+                    room=to_username
                 )
                 emit(
                     "chat_response",
                     {
                         "accepted": True,
-                        "room_id": room.id,
-                        "other_user": to_user.username
+                        "room_id": chatroom["id"],
+                        "other_user": to_username
                     },
-                    room=from_user.username
+                    room=from_username
                 )
             else:
                 # notify the requesting user that the request was declined
                 emit(
                     "chat_response",
                     {"accepted": False, "message": "Chat request declined"},
-                    room=to_user.username
+                    room=to_username
                 )
         else:
             emit(
                 "chat_response",
                 {"accepted": False, "message": "No pending chat request found"},
-                room=from_user.username
+                room=from_username
             )
 
 @socketio.on("join_room")
 def handle_join_room(data):
     username = data.get("username")
     room_id = data.get("room_id")
-    user = chat_server.get_user(username)
-    if util.user_authorized_in_room(username, room_id, chat_server):
-        user.in_room = True
+    if manager.user_authorized_in_room(username, room_id):
         join_room(room_id)
         emit("join_room_success", {"message": "Joined room successfully"})
-        emit("update_user_list", chat_server.list_users_in_lobby(), broadcast=True)
+        emit("update_user_list", manager.list_users_in_lobby(), broadcast=True)
     else:
+        logger.warning(f"Unauthorized attempt to join room '{room_id}' by {username}")
         emit("join_room_failure", {"message": "Unauthorized access"})
 
 @socketio.on("leave_room")
 def handle_leave_room(data):
     username = data.get("username")
     room_id = data.get("room_id")
-    user = chat_server.get_user(username)
-    if util.user_authorized_in_room(username, room_id, chat_server):
+    if manager.user_authorized_in_room(username, room_id):
         emit(
             "receive_message",
             {"message": "has left the chat", "username": username, "type": "system"},
             room=room_id,
             include_self=False
         )
-        user.in_room = False
         leave_room(room_id)
-        emit("update_user_list", chat_server.list_users_in_lobby(), broadcast=True)
+        manager.leave_chatroom(username, room_id)
+        emit("update_user_list", manager.list_users_in_lobby(), broadcast=True)
 
 @socketio.on("send_message")
 def handle_send_message(data):
@@ -164,7 +188,7 @@ def handle_send_message(data):
     iv = data.get("iv")
     message = data.get("message")
     username = data.get("username")
-    if util.user_authorized_in_room(username, room_id, chat_server):
+    if manager.user_authorized_in_room(username, room_id):
         emit(
             "receive_message",
             {
@@ -195,10 +219,10 @@ def handle_share_public_key(data):
 @socketio.on("leave_server")
 def handle_leave_server(data):
     username = data.get("username")
-    user = chat_server.get_user(username)
+    user = manager.get_user(username)
     if user:
-        chat_server.remove_user(username)
-        emit("update_user_list", chat_server.list_users_in_lobby(), broadcast=True)
+        manager.remove_user(username)
+        emit("update_user_list", manager.list_users_in_lobby(), broadcast=True)
 
 
 if __name__ == "__main__":

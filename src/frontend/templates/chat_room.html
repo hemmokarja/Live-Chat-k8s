@@ -7,6 +7,7 @@
 {% block content %}
 <div class="chat-room-container">
   <h2>Chatting with <span id="chat-other-user"></h2>
+  <p>Docker container ID: {{ container_id }}</p>  <!--Remove after not necessary-->
   <div id="chat-messages" class="chat-messages"></div>
   <div class="message-input-container">
     <input type="text" id="message-input" placeholder="Type your message..." autocomplete="off" />
