@@ -12,6 +12,7 @@ def to_json(data):
     except (TypeError, ValueError) as e:
         raise ValueError(f"Failed to serialize data: {repr(e)}")
 
+
 def from_json(data):
     try:
         return json.loads(data)

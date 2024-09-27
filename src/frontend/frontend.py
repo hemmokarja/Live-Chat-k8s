@@ -1,7 +1,7 @@
 import requests
 from flask import Flask, redirect, render_template, request, session, url_for
 
-BACKEND_URL = "http://backend_service:5002"
+BACKEND_URL = "http://nginx/api"
 
 app = Flask(__name__)
 app.config["'ENV"] = "production"

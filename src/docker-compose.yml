@@ -8,12 +8,23 @@ services:
     volumes:
       - ./frontend:/app
 
-  backend_service:
+  backend_service1:
     build: ./backend
     ports:
-      - "5002:5002"
+      - "5002:5002"  # Host port 5002 mapped to internal port 5002
     volumes:
       - ./backend:/app
+    depends_on:
+      - redis
+
+  backend_service2:
+    build: ./backend
+    ports:
+      - "5003:5002"  # Host port 5003 mapped to internal port 5002
+    volumes:
+      - ./backend:/app
+    depends_on:
+      - redis
 
   nginx:
     image: nginx
@@ -23,7 +34,8 @@ services:
       - "80:80"
     depends_on:
       - frontend_service
-      - backend_service
+      - backend_service1
+      - backend_service2
 
   redis:
     image: redis:latest

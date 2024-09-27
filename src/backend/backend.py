@@ -1,3 +1,8 @@
+from gevent import monkey
+# ugly, but required, see for more:
+# https://flask-socketio.readthedocs.io/en/latest/deployment.html#using-multiple-workers
+monkey.patch_all()
+
 import os
 import logging
 import sys
@@ -7,11 +12,10 @@ from flask_socketio import SocketIO, emit, join_room, leave_room
 from chat_manager import RedisChatManager
 
 logging.basicConfig(
-    level=logging.DEBUG,
+    level=logging.INFO,
     format="[%(asctime)s][%(name)s][%(levelname)s] %(message)s",
     handlers=[logging.StreamHandler(sys.stdout)]
 )
-
 logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
@@ -19,12 +23,14 @@ app.config["ENV"] = "production"
 app.config["DEBUG"] = False
 app.config["SECRET_KEY"] = "your_secret_key"
 socketio = SocketIO(
-    app, cors_allowed_origins=["http://localhost:5001", "http://127.0.0.1:5001"]
+    app,
+    cors_allowed_origins=["http://localhost:5001"],
+    message_queue="redis://redis:6379/0",
 )
 manager = RedisChatManager(host="redis", port=6379, db=0)
 
 
-@app.route("/container_id", methods=["GET"])
+@app.route("/api/container_id", methods=["GET"])
 def container_id():
     # TODO remove after not necessary
     container_id = os.uname()[1]
@@ -34,7 +40,7 @@ def container_id():
 def index():
     return "WebSocket server running!"
 
-@app.route("/check_username", methods=["POST"])
+@app.route("/api/check_username", methods=["POST"])
 def check_username():
     data = request.get_json()
     username = data.get("username")
@@ -43,7 +49,7 @@ def check_username():
         return jsonify({"available": False}), 200
     return jsonify({"available": True}), 200
 
-@app.route("/verify_room_access", methods=["POST"])
+@app.route("/api/verify_room_access", methods=["POST"])
 def verify_room_access():
     data = request.get_json()
     room_id = data.get("room_id")
