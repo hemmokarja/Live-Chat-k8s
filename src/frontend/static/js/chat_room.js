@@ -1,17 +1,13 @@
+// Initialize the socket connection
+const socket = io("ws://localhost:9999/socket.io", {
+    query: { username: username }
+});
+
+// Get references to the DOM elements
 const messageInput = document.getElementById("message-input");
 const chatMessages = document.getElementById("chat-messages");
 const sendBtn = document.getElementById("send-btn");
 const leaveRoomBtn = document.getElementById("leave-room-btn");
-
-// Initialize the socket connection
-const socket = io("ws://localhost/socket.io", {
-    query: { username: username }
-});
-// const socket = io("/", {
-//     path: "/socket.io",
-//     transports: ['websocket'],
-//     query: { username: username }
-// });
 
 // Get other user's name from session storage
 const other_user = sessionStorage.getItem("other_user");

@@ -1,17 +1,7 @@
 // Initialize the socket connection
-const socket = io("ws://localhost/socket.io", {
-    query: {
-        username: username,
-    },
+const socket = io("ws://localhost:9999/socket.io", {
+    query: { username: username },
 });
-
-// const socket = io("/", {
-//     path: "/socket.io",
-//     transports: ['websocket'],
-//     query: {
-//         username: username,
-//     },
-// });
 
 // Get references to the DOM elements
 const userList = document.getElementById("user-list");
@@ -22,7 +12,7 @@ let requestPending = false;
 
 // Handle connection to the lobby
 socket.on("connect", () => {
-    console.log(`User '${username}' to the lobby`);
+    console.log(`User '${username}' connected to the lobby`);
     socket.emit("join_lobby", { username: username });
 });
 

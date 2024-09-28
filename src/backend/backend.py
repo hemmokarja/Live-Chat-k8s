@@ -3,7 +3,6 @@ from gevent import monkey
 # https://flask-socketio.readthedocs.io/en/latest/deployment.html#using-multiple-workers
 monkey.patch_all()
 
-import os
 import logging
 import sys
 
@@ -24,12 +23,16 @@ app.config["DEBUG"] = False
 app.config["SECRET_KEY"] = "your_secret_key"
 socketio = SocketIO(
     app,
-    cors_allowed_origins=["http://localhost:5001"],
+    cors_allowed_origins=["http://localhost:9999"],
     message_queue="redis://redis:6379/0",
     engineio_logger=True
 )
 manager = RedisChatManager(host="redis", port=6379, db=1)
 
+
+@app.route("/api/")
+def index():
+    return "WebSocket server running!"
 
 @app.route("/api/container_id", methods=["GET"])
 def container_id():
@@ -38,10 +41,6 @@ def container_id():
     container_id = socket.gethostname()
     # container_id = os.uname()[1]
     return jsonify({"container_id": container_id}), 200
-
-@app.route("/")
-def index():
-    return "WebSocket server running!"
 
 @app.route("/api/check_username", methods=["POST"])
 def check_username():
@@ -63,7 +62,7 @@ def verify_room_access():
         logger.warning(f"Failed room verification to room '{room_id}' by {username}")
         return jsonify({"authorized": False}), 200    
 
-@socketio.on("join_lobby")
+@socketio.on("join_lobby", namespace="/socket.io")
 def handle_join_lobby(data):
     username = data.get("username")
     if not username:
@@ -75,7 +74,7 @@ def handle_join_lobby(data):
     join_room(username)
     emit("update_user_list", manager.list_users_in_lobby(), broadcast=True)
 
-@socketio.on("chat_request")
+@socketio.on("chat_request", namespace="/socket.io")
 def handle_chat_request(data):
     from_username = data.get("from_user")
     to_username = data.get("to_user")
@@ -114,7 +113,7 @@ def handle_chat_request(data):
             room=from_username
         )
 
-@socketio.on("chat_response")
+@socketio.on("chat_response", namespace="/socket.io")
 def handle_chat_response(data):
     from_username = data.get("to_user")
     to_username = data.get("from_user")  # the user who sent the request
@@ -164,7 +163,7 @@ def handle_chat_response(data):
                 room=from_username
             )
 
-@socketio.on("join_room")
+@socketio.on("join_room", namespace="/socket.io")
 def handle_join_room(data):
     username = data.get("username")
     room_id = data.get("room_id")
@@ -176,7 +175,7 @@ def handle_join_room(data):
         logger.warning(f"Unauthorized attempt to join room '{room_id}' by {username}")
         emit("join_room_failure", {"message": "Unauthorized access"})
 
-@socketio.on("leave_room")
+@socketio.on("leave_room", namespace="/socket.io")
 def handle_leave_room(data):
     username = data.get("username")
     room_id = data.get("room_id")
@@ -191,7 +190,7 @@ def handle_leave_room(data):
         manager.leave_chatroom(username, room_id)
         emit("update_user_list", manager.list_users_in_lobby(), broadcast=True)
 
-@socketio.on("send_message")
+@socketio.on("send_message", namespace="/socket.io")
 def handle_send_message(data):
     room_id = data.get("room_id")
     aes_key = data.get("aes_key")
@@ -214,7 +213,7 @@ def handle_send_message(data):
     else:
         emit("error", {"message": "Unauthorized"})
 
-@socketio.on("share_public_key")
+@socketio.on("share_public_key", namespace="/socket.io")
 def handle_share_public_key(data):
     room_id = data.get("room_id")
     public_key = data.get("public_key")
@@ -226,7 +225,7 @@ def handle_share_public_key(data):
             include_self=False,
         )
 
-@socketio.on("leave_server")
+@socketio.on("leave_server", namespace="/socket.io")
 def handle_leave_server(data):
     username = data.get("username")
     user = manager.get_user(username)
@@ -236,4 +235,4 @@ def handle_leave_server(data):
 
 
 if __name__ == "__main__":
-    socketio.run(app, host="0.0.0.0", port=5002)
+    socketio.run(app, host="0.0.0.0", port=5000)
