@@ -4,9 +4,14 @@ const sendBtn = document.getElementById("send-btn");
 const leaveRoomBtn = document.getElementById("leave-room-btn");
 
 // Initialize the socket connection
-const socket = io("ws://localhost:5002", {
+const socket = io("ws://localhost/socket.io", {
     query: { username: username }
 });
+// const socket = io("/", {
+//     path: "/socket.io",
+//     transports: ['websocket'],
+//     query: { username: username }
+// });
 
 // Get other user's name from session storage
 const other_user = sessionStorage.getItem("other_user");

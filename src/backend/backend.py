@@ -26,14 +26,17 @@ socketio = SocketIO(
     app,
     cors_allowed_origins=["http://localhost:5001"],
     message_queue="redis://redis:6379/0",
+    engineio_logger=True
 )
-manager = RedisChatManager(host="redis", port=6379, db=0)
+manager = RedisChatManager(host="redis", port=6379, db=1)
 
 
 @app.route("/api/container_id", methods=["GET"])
 def container_id():
     # TODO remove after not necessary
-    container_id = os.uname()[1]
+    import socket
+    container_id = socket.gethostname()
+    # container_id = os.uname()[1]
     return jsonify({"container_id": container_id}), 200
 
 @app.route("/")
@@ -67,6 +70,7 @@ def handle_join_lobby(data):
         return False  # Reject the connection
     user = manager.get_user(username)
     if not user:
+        logger.info(f"Adding new user '{username}'")
         manager.add_user(username)
     join_room(username)
     emit("update_user_list", manager.list_users_in_lobby(), broadcast=True)

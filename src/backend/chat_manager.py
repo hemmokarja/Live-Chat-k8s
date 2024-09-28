@@ -21,7 +21,7 @@ def from_json(data):
 
 
 class RedisChatManager:
-    def __init__(self, host="localhost", port=6379, db=0):
+    def __init__(self, host="localhost", port=6379, db=1):
         self.redis = redis.StrictRedis(host=host, port=port, db=db)
 
     def add_user(self, username):
