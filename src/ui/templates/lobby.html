@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/lobby.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="form-container">
+  <h2>Welcome, <span>{{ username }}</span>!</h2>
+  <h3>Users Online:</h3>
+  <div class="user-list-container">
+    <ul id="user-list" class="user-list" role="list"></ul>
+  </div>
+
+  <div class="exit-container">
+    <button id="leave-lobby-btn" class="exit-btn">Leave Lobby</button>
+  </div>
+</div>
+<script>
+  const username = "{{ username }}";
+</script>
+<script src="{{ url_for('static', filename='js/lobby.js') }}"></script>
+{% endblock %}

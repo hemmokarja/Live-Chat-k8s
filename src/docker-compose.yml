@@ -1,8 +1,8 @@
 version: "3"
 services:
   
-  frontend_service:
-    build: ./frontend
+  ui_service:
+    build: ./ui
     ports:
       - "8000"  # ports directive can be removed to prevent access from local machine
 
@@ -27,7 +27,7 @@ services:
     ports:
       - "9999:80"  # access localhost:9999 to route traffic with nginx
     depends_on:
-      - frontend_service
+      - ui_service
       - backend_service1
       - backend_service2
 

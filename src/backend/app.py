@@ -39,7 +39,6 @@ def container_id():
     # TODO remove after not necessary
     import socket
     container_id = socket.gethostname()
-    # container_id = os.uname()[1]
     return jsonify({"container_id": container_id}), 200
 
 @app.route("/api/check_username", methods=["POST"])
