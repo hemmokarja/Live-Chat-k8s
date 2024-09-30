@@ -1,14 +1,16 @@
 from gevent import monkey
+
 # ugly, but required, see for more:
 # https://flask-socketio.readthedocs.io/en/latest/deployment.html#using-multiple-workers
 monkey.patch_all()
 
+import os
 import logging
 import sys
 
+from chat_manager import RedisChatManager
 from flask import Flask, jsonify, request
 from flask_socketio import SocketIO, emit, join_room, leave_room
-from chat_manager import RedisChatManager
 
 logging.basicConfig(
     level=logging.INFO,
@@ -18,16 +20,21 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
-app.config["ENV"] = "production"
-app.config["DEBUG"] = False
-app.config["SECRET_KEY"] = "your_secret_key"
+app.config["ENV"] = os.environ["FLASK_ENV"]
+app.config["DEBUG"] = os.environ["FLASK_DEBUG"]
+app.config["SECRET_KEY"] = os.environ["FLASK_SECRET_KEY"]
+
+nginx_host = os.environ["NGINX_HOST"]
+nginx_port = os.environ["NGINX_PORT"]
+redis_host = os.environ["REDIS_HOST"]
+redis_port = os.environ["REDIS_PORT"]
 socketio = SocketIO(
     app,
-    cors_allowed_origins=["http://localhost:9999"],
-    message_queue="redis://redis:6379/0",
+    cors_allowed_origins=[f"http://{nginx_host}:{nginx_port}"],
+    message_queue=f"redis://{redis_host}:{redis_port}/0",
     engineio_logger=True
 )
-manager = RedisChatManager(host="redis", port=6379, db=1)
+manager = RedisChatManager(host=redis_host, port=redis_port, db=1)
 
 
 @app.route("/api/")
