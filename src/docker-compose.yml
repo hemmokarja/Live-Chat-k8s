@@ -1,0 +1,37 @@
+version: "3"
+services:
+  
+  ui_service:
+    build: ./ui
+    ports:
+      - "8000"  # ports directive can be removed to prevent access from local machine
+
+  backend_service1:
+    build: ./backend
+    ports:
+      - "5000"  # ports directive can be removed to prevent access from local machine
+    depends_on:
+      - redis
+
+  backend_service2:
+    build: ./backend
+    ports:
+      - "5000"  # ports directive can be removed to prevent access from local machine
+    depends_on:
+      - redis
+
+  nginx:
+    image: nginx
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf
+    ports:
+      - "9999:80"  # access localhost:9999 to route traffic with nginx
+    depends_on:
+      - ui_service
+      - backend_service1
+      - backend_service2
+
+  redis:
+    image: redis:latest
+    ports:
+      - "6379:6379"
