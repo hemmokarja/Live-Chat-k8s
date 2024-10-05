@@ -1,9 +1,9 @@
 locals {
   backend_module_repository_name = "${lower(var.project)}/backend_module"
   ui_module_repository_name      = "${lower(var.project)}/ui_module"
-  backend_path                    = "${path.module}/../src/backend"
-  ui_path                         = "${path.module}/../src/ui"
-  push_image_path                 = "${path.module}/scripts/push_image.sh"
+  backend_path                   = "${path.module}/../src/backend"
+  ui_path                        = "${path.module}/../src/ui"
+  push_image_path                = "${path.module}/scripts/push_image.sh"
 }
 
 

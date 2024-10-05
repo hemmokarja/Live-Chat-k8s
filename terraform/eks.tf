@@ -35,13 +35,13 @@ module "eks" {
 
   eks_managed_node_groups = {
     workers = {
-      ami_type       = "AL2023_x86_64_STANDARD"
-      instance_types = ["t3.medium"]
-      min_size       = var.eks_min_capacity
-      max_size       = var.eks_max_capacity
-      desired_size   = var.eks_desired_capacity
-      # subnet_ids             = module.vpc.private_subnets
+      ami_type               = "AL2023_x86_64_STANDARD"
+      instance_types         = ["t3.medium"]
+      min_size               = var.eks_min_nodes
+      max_size               = var.eks_max_nodes
+      desired_size           = var.eks_desired_ndoes
       vpc_security_group_ids = [aws_security_group.worker_sg.id]
+      # subnet_ids             = module.vpc.private_subnets
 
       iam_role_name = "${var.project}EKSWorkerRole"
       iam_role_additional_policies = {

@@ -32,15 +32,15 @@ variable "eks_instance_type" {
   description = "Instance type of the EKS cluster worker nodes"
 }
 
-variable "eks_desired_capacity" {
+variable "eks_desired_nodes" {
   description = "Desired number of EC2 instances in the EKS cluster"
 }
 
-variable "eks_min_capacity" {
+variable "eks_min_nodes" {
   description = "Minimum number of EC2 instances in the EKS cluster"
 }
 
-variable "eks_max_capacity" {
+variable "eks_max_nodes" {
   description = "Maximum number of EC2 instances in the EKS cluster"
 }
 
