@@ -36,7 +36,7 @@ module "eks" {
   eks_managed_node_groups = {
     workers = {
       ami_type               = "AL2023_x86_64_STANDARD"
-      instance_types         = ["t3.medium"]
+      instance_types         = [var.eks_instance_type]
       min_size               = var.eks_min_nodes
       max_size               = var.eks_max_nodes
       desired_size           = var.eks_desired_ndoes
