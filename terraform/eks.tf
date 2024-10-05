@@ -31,8 +31,7 @@ module "eks" {
   cluster_endpoint_public_access       = true
   cluster_endpoint_private_access      = true
   cluster_endpoint_public_access_cidrs = [var.allowed_cidr]
-
-  cluster_security_group_id = aws_security_group.cluster_sg.id
+  cluster_security_group_id            = aws_security_group.cluster_sg.id
 
   eks_managed_node_groups = {
     workers = {
