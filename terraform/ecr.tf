@@ -1,8 +1,8 @@
 locals {
   backend_module_repository_name = "${lower(var.project)}/backend_module"
   ui_module_repository_name      = "${lower(var.project)}/ui_module"
-  backend_path                   = "${path.module}/../src/backend"
-  ui_path                        = "${path.module}/../src/ui"
+  backend_dir                    = "${path.module}/../src/backend"
+  ui_dir                         = "${path.module}/../src/ui"
   push_image_path                = "${path.module}/scripts/push_image.sh"
 }
 
@@ -52,8 +52,8 @@ resource "null_resource" "push_backend_image" {
       IMAGE_TAG       = "backend_module"
       REGION          = var.region
       REPOSITORY_NAME = local.backend_module_repository_name
-      DOCKERFILE_PATH = "${local.backend_path}/Dockerfile"
-      CONTEXT_DIR     = local.backend_path
+      DOCKERFILE_PATH = "${local.backend_dir}/Dockerfile"
+      CONTEXT_DIR     = local.backend_dir
     }
   }
 }
@@ -72,8 +72,8 @@ resource "null_resource" "push_ui_image" {
       IMAGE_TAG       = "ui_module"
       REGION          = var.region
       REPOSITORY_NAME = local.ui_module_repository_name
-      DOCKERFILE_PATH = "${local.ui_path}/Dockerfile"
-      CONTEXT_DIR     = local.ui_path
+      DOCKERFILE_PATH = "${local.ui_dir}/Dockerfile"
+      CONTEXT_DIR     = local.ui_dir
     }
   }
 }

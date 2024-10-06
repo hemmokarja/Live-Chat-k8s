@@ -5,7 +5,7 @@ module "eks" {
   source          = "terraform-aws-modules/eks/aws"
   version         = "~> 20.0"
   cluster_name    = var.cluster_name
-  cluster_version = "1.30"
+  cluster_version = "1.30" # TODO update to 1.31
 
   vpc_id     = module.vpc.vpc_id
   subnet_ids = module.vpc.private_subnets
@@ -39,7 +39,7 @@ module "eks" {
       instance_types         = [var.eks_instance_type]
       min_size               = var.eks_min_nodes
       max_size               = var.eks_max_nodes
-      desired_size           = var.eks_desired_ndoes
+      desired_size           = var.eks_desired_nodes
       vpc_security_group_ids = [aws_security_group.worker_sg.id]
       # subnet_ids             = module.vpc.private_subnets
 
