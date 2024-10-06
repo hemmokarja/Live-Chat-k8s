@@ -24,13 +24,14 @@ app.config["ENV"] = os.environ["FLASK_ENV"]
 app.config["DEBUG"] = os.environ["FLASK_DEBUG"]
 app.config["SECRET_KEY"] = os.environ["FLASK_SECRET_KEY"]
 
-nginx_host = os.environ["NGINX_HOST"]
-nginx_port = os.environ["NGINX_PORT"]
+# nginx_host = os.environ["NGINX_HOST"]
+# nginx_port = os.environ["NGINX_PORT"]
 redis_host = os.environ["REDIS_HOST"]
 redis_port = os.environ["REDIS_PORT"]
 socketio = SocketIO(
     app,
-    cors_allowed_origins=[f"http://{nginx_host}:{nginx_port}"],
+    # cors_allowed_origins=[f"http://{nginx_host}:{nginx_port}"],
+    cors_allowed_origins=["*"],
     message_queue=f"redis://{redis_host}:{redis_port}/0",
     engineio_logger=True
 )

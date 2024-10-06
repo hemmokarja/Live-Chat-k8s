@@ -1,0 +1,50 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ui-deployment
+  labels:
+    app: ui
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: ui
+  template:
+    metadata:
+      labels:
+        app: ui
+    spec:
+      containers:
+        - name: ui
+          image: 217456477584.dkr.ecr.eu-north-1.amazonaws.com/livechatapp/ui_module:latest
+          ports:
+            - containerPort: 8000
+          env:
+            - name: FLASK_ENV
+              value: "production"
+            - name: FLASK_DEBUG
+              value: "false"
+            - name: FLASK_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: flask-secret
+                  key: secret_key
+            - name: BACKEND_URL
+              # value: "/api"
+              value: "http://backend-service:5000"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ui-service
+  labels:
+    app: ui
+spec:
+  type: ClusterIP
+  selector:
+    app: ui
+  ports:
+    - protocol: TCP
+      port: 8000
+      targetPort: 8000
+  # sessionAffinity: ClientIP  # works similarly as IP hashing

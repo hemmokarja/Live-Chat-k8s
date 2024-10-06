@@ -58,6 +58,8 @@ module "eks" {
     "EKSClusterPolicy" = "arn:aws:iam::aws:policy/AmazonEKSClusterPolicy"
     "EKSServicePolicy" = "arn:aws:iam::aws:policy/AmazonEKSServicePolicy"
   }
+  
+  enable_irsa = true
 
   cluster_enabled_log_types = ["api", "audit", "authenticator", "controllerManager", "scheduler"]
 

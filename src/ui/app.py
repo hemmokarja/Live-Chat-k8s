@@ -20,7 +20,7 @@ def index():
 def check_username():
     username = request.form.get("username")
     response = requests.post(
-        f"{backend_url}/check_username", json={"username": username}
+        f"{backend_url}/api/check_username", json={"username": username}
     )
     data = response.json()
     if not data["available"]:
@@ -45,7 +45,7 @@ def chat_room():
         return redirect(url_for("lobby"))
 
     response = requests.post(
-        f"{backend_url}/verify_room_access",
+        f"{backend_url}/api/verify_room_access",
         json={"room_id": room_id, "username": username}
     )
     data = response.json()
@@ -53,7 +53,7 @@ def chat_room():
         return render_template("unauthorized.html"), 403
     
     # TODO remove after not necessary
-    response = requests.get(f"{backend_url}/container_id")
+    response = requests.get(f"{backend_url}/api/container_id")
     data = response.json()
     container_id = data.get("container_id")
 

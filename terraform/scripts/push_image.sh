@@ -1,5 +1,10 @@
 #!/bin/bash
-docker build --no-cache -f "$DOCKERFILE_PATH" -t "$IMAGE_TAG" "$CONTEXT_DIR"
+docker build \
+    --no-cache \
+    -f "$DOCKERFILE_PATH" \
+    --platform linux/amd64 \
+    -t "$IMAGE_TAG" \
+    "$CONTEXT_DIR"
 ACCOUNT_ID=$(aws sts get-caller-identity | jq -r ".Account")
 aws ecr get-login-password --region "$REGION" | \
     docker login \
