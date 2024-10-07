@@ -24,15 +24,15 @@ app.config["ENV"] = os.environ["FLASK_ENV"]
 app.config["DEBUG"] = os.environ["FLASK_DEBUG"]
 app.config["SECRET_KEY"] = os.environ["FLASK_SECRET_KEY"]
 
-# nginx_host = os.environ["NGINX_HOST"]
-# nginx_port = os.environ["NGINX_PORT"]
+# alb_dbs = os.environ["ALB_DNS"]
+alb_dns = "http://k8s-default-livechat-c766082308-918824972.eu-north-1.elb.amazonaws.com"
 redis_host = os.environ["REDIS_HOST"]
 redis_port = os.environ["REDIS_PORT"]
 socketio = SocketIO(
     app,
-    # cors_allowed_origins=[f"http://{nginx_host}:{nginx_port}"],
-    cors_allowed_origins=["*"],
+    cors_allowed_origins=[alb_dns],
     message_queue=f"redis://{redis_host}:{redis_port}/0",
+    logger=True,
     engineio_logger=True
 )
 manager = RedisChatManager(host=redis_host, port=redis_port, db=1)
@@ -69,7 +69,7 @@ def verify_room_access():
         logger.warning(f"Failed room verification to room '{room_id}' by {username}")
         return jsonify({"authorized": False}), 200    
 
-@socketio.on("join_lobby", namespace="/socket.io")
+@socketio.on("join_lobby")
 def handle_join_lobby(data):
     username = data.get("username")
     if not username:
@@ -81,7 +81,7 @@ def handle_join_lobby(data):
     join_room(username)
     emit("update_user_list", manager.list_users_in_lobby(), broadcast=True)
 
-@socketio.on("chat_request", namespace="/socket.io")
+@socketio.on("chat_request")
 def handle_chat_request(data):
     from_username = data.get("from_user")
     to_username = data.get("to_user")
@@ -120,7 +120,7 @@ def handle_chat_request(data):
             room=from_username
         )
 
-@socketio.on("chat_response", namespace="/socket.io")
+@socketio.on("chat_response")
 def handle_chat_response(data):
     from_username = data.get("to_user")
     to_username = data.get("from_user")  # the user who sent the request
@@ -170,7 +170,7 @@ def handle_chat_response(data):
                 room=from_username
             )
 
-@socketio.on("join_room", namespace="/socket.io")
+@socketio.on("join_room")
 def handle_join_room(data):
     username = data.get("username")
     room_id = data.get("room_id")
@@ -197,7 +197,7 @@ def handle_leave_room(data):
         manager.leave_chatroom(username, room_id)
         emit("update_user_list", manager.list_users_in_lobby(), broadcast=True)
 
-@socketio.on("send_message", namespace="/socket.io")
+@socketio.on("send_message")
 def handle_send_message(data):
     room_id = data.get("room_id")
     aes_key = data.get("aes_key")
@@ -220,7 +220,7 @@ def handle_send_message(data):
     else:
         emit("error", {"message": "Unauthorized"})
 
-@socketio.on("share_public_key", namespace="/socket.io")
+@socketio.on("share_public_key")
 def handle_share_public_key(data):
     room_id = data.get("room_id")
     public_key = data.get("public_key")
@@ -232,7 +232,7 @@ def handle_share_public_key(data):
             include_self=False,
         )
 
-@socketio.on("leave_server", namespace="/socket.io")
+@socketio.on("leave_server")
 def handle_leave_server(data):
     username = data.get("username")
     user = manager.get_user(username)

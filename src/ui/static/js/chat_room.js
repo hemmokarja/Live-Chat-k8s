@@ -1,6 +1,8 @@
 // Initialize the socket connection
-const socket = io("ws://localhost:9999/socket.io", {
-    query: { username: username }
+const socket = io("ws://k8s-default-livechat-c766082308-918824972.eu-north-1.elb.amazonaws.com", {
+    path: "/socket.io",
+    transports: ["websocket"],
+    query: { username: username },
 });
 
 // Get references to the DOM elements
