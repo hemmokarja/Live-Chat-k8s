@@ -28,8 +28,9 @@ resource "aws_security_group" "lb_sg" {
   }
 
   tags = {
-    Name = "${var.project}LoadBalancerSG"
-    User = var.username
+    Name    = "${var.project}LoadBalancerSG"
+    User    = var.username
+    Project = var.project
   }
 }
 
@@ -64,8 +65,9 @@ resource "aws_security_group" "worker_sg" {
   }
 
   tags = {
-    Name = "${var.project}WorkerSG"
-    User = var.username
+    Name    = "${var.project}WorkerSG"
+    User    = var.username
+    Project = var.project
   }
 }
 
@@ -92,7 +94,8 @@ resource "aws_security_group" "cluster_sg" {
   }
 
   tags = {
-    Name = "${var.project}ClusterSG"
-    User = var.username
+    Name    = "${var.project}ClusterSG"
+    User    = var.username
+    Project = var.project
   }
 }

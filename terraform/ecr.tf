@@ -5,7 +5,7 @@ locals {
   ui_dir                         = "${path.module}/../src/ui"
   backend_files                  = fileset(local.backend_dir, "**")
   ui_files                       = fileset(local.ui_dir, "**")
-  push_image_path                = "${path.module}/scripts/push_image.sh"
+  push_image_path                = "${path.module}/../scripts/push_image.sh"
 }
 
 
@@ -19,8 +19,9 @@ resource "aws_ecr_repository" "backend_module" {
   force_delete = true
 
   tags = {
-    Name = "${var.project}BackendModuleECRRepository"
-    User = var.username
+    Name    = "${var.project}BackendModuleECRRepository"
+    User    = var.username
+    Project = var.project
   }
 }
 
@@ -34,18 +35,11 @@ resource "aws_ecr_repository" "ui_module" {
   force_delete = true
 
   tags = {
-    Name = "${var.project}UIModuleECRRepository"
-    User = var.username
+    Name    = "${var.project}UIModuleECRRepository"
+    User    = var.username
+    Project = var.project
   }
 }
-
-
-# push images
-# data "archive_file" "backend_module" {
-#   type        = "zip"
-#   source_dir  = local.backend_dir
-#   output_path = "/dev/null"
-# }
 
 
 resource "null_resource" "push_backend_image" {
@@ -53,7 +47,6 @@ resource "null_resource" "push_backend_image" {
 
   triggers = {
     push_checksum = filemd5(local.push_image_path)
-    # app_checksum  = data.archive_file.backend_module.output_md5
     app_checksum  = md5(join("", [for f in local.backend_files : filemd5("${local.backend_dir}/${f}")]))
   }
 
@@ -70,19 +63,11 @@ resource "null_resource" "push_backend_image" {
 }
 
 
-# data "archive_file" "ui_module" {
-#   type        = "zip"
-#   source_dir  = local.ui_dir
-#   output_path = "/dev/null"
-# }
-
-
 resource "null_resource" "push_ui_image" {
   depends_on = [aws_ecr_repository.ui_module]
 
   triggers = {
     push_checksum = filemd5(local.push_image_path)
-    # app_checksum  = data.archive_file.ui_module.output_md5
     app_checksum  = md5(join("", [for f in local.ui_files : filemd5("${local.ui_dir}/${f}")]))
   }
 

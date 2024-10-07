@@ -16,15 +16,24 @@ module "vpc" {
 
   tags = {
     "kubernetes.io/cluster/${var.cluster_name}" = "shared"
+    Name                                        = "${var.project}VPC"
+    User                                        = var.username
+    Project                                     = var.project
   }
 
   public_subnet_tags = {
     "kubernetes.io/cluster/${var.cluster_name}" = "shared"
     "kubernetes.io/role/elb"                    = "1"
+    Name                                        = "${var.project}PublicSubnet"
+    User                                        = var.username
+    Project                                     = var.project
   }
 
   private_subnet_tags = {
     "kubernetes.io/cluster/${var.cluster_name}" = "shared"
     "kubernetes.io/role/internal-elb"           = "1"
+    Name                                        = "${var.project}PrivateSubnet"
+    User                                        = var.username
+    Project                                     = var.project
   }
 }

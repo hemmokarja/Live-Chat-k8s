@@ -1,7 +1,7 @@
 
 data "aws_iam_policy_document" "aws_lb_controller_assume_role_policy" {
   statement {
-    effect = "Allow"
+    effect  = "Allow"
     actions = ["sts:AssumeRoleWithWebIdentity"]
     principals {
       type        = "Federated"
@@ -10,7 +10,7 @@ data "aws_iam_policy_document" "aws_lb_controller_assume_role_policy" {
     condition {
       test     = "StringEquals"
       variable = "${replace(module.eks.cluster_oidc_issuer_url, "https://", "")}:sub"
-      values   = ["system:serviceaccount:kube-system:aws-load-balancer-controller"]  # NOTE HERE THE NAME!!!!
+      values   = ["system:serviceaccount:kube-system:aws-load-balancer-controller"] # NOTE HERE THE NAME!!!!
     }
   }
 }
@@ -23,7 +23,7 @@ resource "aws_iam_role" "aws_lb_controller_role" {
 
 
 resource "aws_iam_policy" "aws_lb_controller_policy" {
-  name        = "${var.project}EKSAWSLoadBalancerControllerIAMPolicy"
+  name = "${var.project}EKSAWSLoadBalancerControllerIAMPolicy"
 
   # https://github.com/kubernetes-sigs/aws-load-balancer-controller/blob/main/docs/install/iam_policy.json
   policy = file("${path.module}/policies/alb.json")

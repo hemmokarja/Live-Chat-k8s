@@ -5,7 +5,7 @@ module "eks" {
   source          = "terraform-aws-modules/eks/aws"
   version         = "~> 20.0"
   cluster_name    = var.cluster_name
-  cluster_version = "1.30" # TODO update to 1.31
+  cluster_version = "1.31"
 
   vpc_id     = module.vpc.vpc_id
   subnet_ids = module.vpc.private_subnets
@@ -41,7 +41,6 @@ module "eks" {
       max_size               = var.eks_max_nodes
       desired_size           = var.eks_desired_nodes
       vpc_security_group_ids = [aws_security_group.worker_sg.id]
-      # subnet_ids             = module.vpc.private_subnets
 
       iam_role_name = "${var.project}EKSWorkerRole"
       iam_role_additional_policies = {
@@ -58,13 +57,14 @@ module "eks" {
     "EKSClusterPolicy" = "arn:aws:iam::aws:policy/AmazonEKSClusterPolicy"
     "EKSServicePolicy" = "arn:aws:iam::aws:policy/AmazonEKSServicePolicy"
   }
-  
-  enable_irsa = true
+
+  enable_irsa = true # for k8s aws load balancer controller service account
 
   cluster_enabled_log_types = ["api", "audit", "authenticator", "controllerManager", "scheduler"]
 
   tags = {
-    Name = var.cluster_name
-    User = var.username
+    Name    = var.cluster_name
+    User    = var.username
+    Project = var.project
   }
 }
