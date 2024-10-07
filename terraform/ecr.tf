@@ -1,11 +1,12 @@
 locals {
   backend_module_repository_name = "${lower(var.project)}/backend_module"
   ui_module_repository_name      = "${lower(var.project)}/ui_module"
-  backend_dir                    = "${path.module}/../src/backend"
-  ui_dir                         = "${path.module}/../src/ui"
+  root_dir                       = "${path.module}/.."
+  backend_dir                    = "${local.root_dir}/src/backend"
+  ui_dir                         = "${local.root_dir}/src/ui"
   backend_files                  = fileset(local.backend_dir, "**")
   ui_files                       = fileset(local.ui_dir, "**")
-  push_image_path                = "${path.module}/../scripts/push_image.sh"
+  push_image_path                = "${local.root_dir}/scripts/push_image.sh"
 }
 
 
