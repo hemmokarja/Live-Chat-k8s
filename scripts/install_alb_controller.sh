@@ -11,7 +11,7 @@ helm upgrade -i aws-load-balancer-controller eks/aws-load-balancer-controller \
   --set serviceAccount.create=false \
   --set serviceAccount.name=aws-load-balancer-controller \
   --set region=eu-north-1 \
-  --set vpcId=vpc-0b8d569691d186060 \
+  --set vpcId=vpc-072fa669b3c2538e4 \
   --set image.repository=602401143452.dkr.ecr.eu-north-1.amazonaws.com/amazon/aws-load-balancer-controller \
   --set enableCertManager=false
 

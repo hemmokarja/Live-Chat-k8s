@@ -1,5 +1,5 @@
 // Initialize the socket connection
-const socket = io("ws://k8s-default-livechat-c766082308-918824972.eu-north-1.elb.amazonaws.com", {
+const socket = io(`ws://${window.location.hostname}`, {
     path: "/socket.io",
     transports: ["websocket"],
     query: { username: username },

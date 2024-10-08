@@ -24,13 +24,12 @@ app.config["ENV"] = os.environ["FLASK_ENV"]
 app.config["DEBUG"] = os.environ["FLASK_DEBUG"]
 app.config["SECRET_KEY"] = os.environ["FLASK_SECRET_KEY"]
 
-# alb_dbs = os.environ["ALB_DNS"]
-alb_dns = "http://k8s-default-livechat-c766082308-918824972.eu-north-1.elb.amazonaws.com"
+alb_dns = os.environ["ALB_DNS"]
 redis_host = os.environ["REDIS_HOST"]
 redis_port = os.environ["REDIS_PORT"]
 socketio = SocketIO(
     app,
-    cors_allowed_origins=[alb_dns],
+    cors_allowed_origins=[f"http://{alb_dns}"],
     message_queue=f"redis://{redis_host}:{redis_port}/0",
     logger=True,
     engineio_logger=True

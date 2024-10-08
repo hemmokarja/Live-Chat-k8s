@@ -30,7 +30,6 @@ spec:
                   name: flask-secret
                   key: secret_key
             - name: BACKEND_URL
-              # value: "/api"
               value: "http://backend-service:5000"
 ---
 apiVersion: v1
