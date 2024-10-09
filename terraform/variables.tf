@@ -14,19 +14,6 @@ variable "region" {
   description = "The AWS region to deploy resources"
 }
 
-# ports
-variable "backend_module_port" {
-  description = "Exposed internal port of the backend application"
-}
-
-variable "ui_module_port" {
-  description = "Exposed internal port of the UI application"
-}
-
-variable "redis_port" {
-  description = "Exposed port of the Redis Cache"
-}
-
 # EKS
 variable "eks_instance_type" {
   description = "Instance type of the EKS cluster worker nodes"

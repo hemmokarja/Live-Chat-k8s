@@ -5,7 +5,7 @@ metadata:
   labels:
     app: ui
 spec:
-  replicas: 2
+  replicas: {{ .Values.numUiReplicas }}
   selector:
     matchLabels:
       app: ui
@@ -16,9 +16,9 @@ spec:
     spec:
       containers:
         - name: ui
-          image: 217456477584.dkr.ecr.eu-north-1.amazonaws.com/livechatapp/ui_module:latest
+          image: "{{ .Values.awsAccountId }}.dkr.ecr.{{ .Values.region }}.amazonaws.com/{{ .Values.uiEcrRepositoryName }}:latest"
           ports:
-            - containerPort: 8000
+            - containerPort: {{ .Values.uiServicePort }}
           env:
             - name: FLASK_ENV
               value: "production"
@@ -30,7 +30,7 @@ spec:
                   name: flask-secret
                   key: secret_key
             - name: BACKEND_URL
-              value: "http://backend-service:5000"
+              value: "http://backend-service:{{ .Values.backendServicePort }}"
 ---
 apiVersion: v1
 kind: Service
@@ -44,6 +44,5 @@ spec:
     app: ui
   ports:
     - protocol: TCP
-      port: 8000
-      targetPort: 8000
-  # sessionAffinity: ClientIP  # works similarly as IP hashing
+      port: {{ .Values.uiServicePort }}
+      targetPort: {{ .Values.uiServicePort }}

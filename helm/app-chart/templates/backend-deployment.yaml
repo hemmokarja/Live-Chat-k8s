@@ -5,7 +5,7 @@ metadata:
   labels:
     app: backend
 spec:
-  replicas: 2
+  replicas: {{ .Values.numBackendReplicas }}
   selector:
     matchLabels:
       app: backend
@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: backend
-          image: 217456477584.dkr.ecr.eu-north-1.amazonaws.com/livechatapp/backend_module:latest
+          image: "{{ .Values.awsAccountId }}.dkr.ecr.{{ .Values.region }}.amazonaws.com/{{ .Values.backendEcrRepositoryName }}:latest"
           ports:
             - containerPort: 5000
           env:
@@ -32,9 +32,9 @@ spec:
             - name: REDIS_HOST
               value: "redis"
             - name: REDIS_PORT
-              value: "6379"
+              value: {{ .Values.redisPort }}
             - name: ALB_DNS
-              value: "k8s-default-livechat-c766082308-445536452.eu-north-1.elb.amazonaws.com"
+              value: {{ .Values.albDns }}
 ---
 apiVersion: v1
 kind: Service
@@ -48,6 +48,5 @@ spec:
     app: backend
   ports:
     - protocol: TCP
-      port: 5000
-      targetPort: 5000
-  # sessionAffinity: ClientIP  # works similarly as IP hashing
+      port: {{ .Values.backendServicePort }}
+      targetPort: {{ .Values.backendServicePort }}
