@@ -1,5 +1,5 @@
 // Initialize the socket connection
-const socket = io(`ws://${window.location.hostname}`, {  // hostname is ALB DNS
+const socket = io(`wss://${window.location.hostname}`, {  // hostname is ALB DNS
     path: "/socket.io",
     transports: ["websocket"],
     query: { username: username },
@@ -133,36 +133,46 @@ async function importAESKey(keyData) {
 // Send an encrypted message to the server
 async function sendMessage() {
     const message = messageInput.value.trim();
-    if (message && otherUserPublicKey) {
-        // Step 1: Generate a symmetric AES key for encrypting the message
-        const aesKey = await generateAESKey();
-
-        // Step 2: Encrypt the message with AES
-        const { iv, ciphertext } = await encryptWithAES(message, aesKey);
-
-        // Step 3: Encrypt the AES key with the recipient's public RSA key
-        const exportedAESKey = await exportAESKey(aesKey)
-        const encryptedAESKey = await encryptAESKey(exportedAESKey, otherUserPublicKey);
-
-        // Step 4: Send both the encrypted AES key and the encrypted message (ciphertext)
-        socket.emit("send_message", {
-            room_id: room_id,
-            aes_key: Array.from(new Uint8Array(encryptedAESKey)),
-            iv: Array.from(iv), // Send IV along with ciphertext
-            message: Array.from(new Uint8Array(ciphertext)),
-            username: username
-        });
-        messageInput.value = "";  // Clear input field after sending
-
-        // Step 5: Append the message to your own chat window (plaintext)
-        const messageElement = document.createElement("div");
-        messageElement.classList.add("message");
-        messageElement.innerHTML = `<strong>${username}:</strong> ${message}`;
-        chatMessages.appendChild(messageElement);
-        scrollToBottom(); // Scroll the chat to the bottom
-    } else {
-        console.error("No message or public key for the recipient");
+    
+    // Check if message is empty
+    if (!message) {
+        console.error("No message to send");
+        return;
     }
+
+    // Check if the recipient's public key is available
+    if (!otherUserPublicKey) {
+        console.error("No public key for the recipient");
+        return;
+    }
+
+    // Step 1: Generate a symmetric AES key for encrypting the message
+    const aesKey = await generateAESKey();
+
+    // Step 2: Encrypt the message with AES
+    const { iv, ciphertext } = await encryptWithAES(message, aesKey);
+
+    // Step 3: Encrypt the AES key with the recipient's public RSA key
+    const exportedAESKey = await exportAESKey(aesKey);
+    const encryptedAESKey = await encryptAESKey(exportedAESKey, otherUserPublicKey);
+
+    // Step 4: Send both the encrypted AES key and the encrypted message (ciphertext)
+    socket.emit("send_message", {
+        room_id: room_id,
+        aes_key: Array.from(new Uint8Array(encryptedAESKey)),
+        iv: Array.from(iv), // Send IV along with ciphertext
+        message: Array.from(new Uint8Array(ciphertext)),
+        username: username
+    });
+
+    messageInput.value = "";  // Clear input field after sending
+
+    // Step 5: Append the message to your own chat window (plaintext)
+    const messageElement = document.createElement("div");
+    messageElement.classList.add("message");
+    messageElement.innerHTML = `<strong>${username}:</strong> ${message}`;
+    chatMessages.appendChild(messageElement);
+    scrollToBottom(); // Scroll the chat to the bottom
 };
 
 // Scroll chat to the latest message
@@ -194,6 +204,7 @@ leaveRoomBtn.addEventListener("click", () => {
 
 // When connected, join the room
 socket.on("connect", () => {
+    console.log(`User '${username}' connected to the chat room`);
     socket.emit("join_room", { username: username, room_id: room_id });
 });
 
@@ -213,9 +224,11 @@ socket.on("join_room_success", async (data) => {
 
     // Export and send the public key to the server for sharing with others
     const exportedPublicKey = await exportPublicKey(publicKey);
+    console.log("Sharing public key with the other participant");
     socket.emit("share_public_key", {
         room_id: room_id,
-        public_key: Array.from(new Uint8Array(exportedPublicKey))
+        public_key: Array.from(new Uint8Array(exportedPublicKey)),
+        username: username
     });
 });
 
@@ -223,10 +236,12 @@ socket.on("join_room_success", async (data) => {
 socket.on("receive_public_key", async (data) => {
     const publicKeyData = new Uint8Array(data.public_key);
     otherUserPublicKey = await importPublicKey(publicKeyData.buffer);
+    console.log(`Received public key from '${data.username}'`);
 });
 
 // Receive an encrypted message or system message
 socket.on("receive_message", async (data) => {
+    console.log(`Received message from user '${data.username}'`);
     if (data.type === "system") {
         // Handle the system message (e.g., user has left the room)
         const messageElement = document.createElement("div");

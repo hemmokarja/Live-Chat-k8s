@@ -1,5 +1,5 @@
 // Initialize the socket connection
-const socket = io(`ws://${window.location.hostname}`, {
+const socket = io(`wss://${window.location.hostname}`, {
     path: "/socket.io",
     transports: ["websocket"],
     query: { username: username },

@@ -29,7 +29,7 @@ redis_host = os.environ["REDIS_HOST"]
 redis_port = os.environ["REDIS_PORT"]
 socketio = SocketIO(
     app,
-    cors_allowed_origins=[f"http://{alb_dns}"],
+    cors_allowed_origins=[f"https://{alb_dns}"],
     message_queue=f"redis://{redis_host}:{redis_port}/0",
     logger=True,
     engineio_logger=True
@@ -89,11 +89,11 @@ def handle_chat_request(data):
     to_user = manager.get_user(to_username)
 
     if not from_user:
-        logger.warning(f"Could not find from_user '{from_user}'")
+        logger.error(f"Could not find from_user '{from_user}'")
         return
 
     if not to_user:
-        logger.warning(f"Could not find to_user '{from_user}'")
+        logger.error(f"Could not find to_user '{from_user}'")
         return
 
     # prevent multiple pending requests from the same user
@@ -174,6 +174,7 @@ def handle_join_room(data):
     username = data.get("username")
     room_id = data.get("room_id")
     if manager.user_authorized_in_room(username, room_id):
+        logger.info(f"Authorized attempt to join room '{room_id}' by {username}")
         join_room(room_id)
         emit("join_room_success", {"message": "Joined room successfully"})
         emit("update_user_list", manager.list_users_in_lobby(), broadcast=True)
@@ -181,7 +182,7 @@ def handle_join_room(data):
         logger.warning(f"Unauthorized attempt to join room '{room_id}' by {username}")
         emit("join_room_failure", {"message": "Unauthorized access"})
 
-@socketio.on("leave_room", namespace="/socket.io")
+@socketio.on("leave_room")
 def handle_leave_room(data):
     username = data.get("username")
     room_id = data.get("room_id")
@@ -223,13 +224,20 @@ def handle_send_message(data):
 def handle_share_public_key(data):
     room_id = data.get("room_id")
     public_key = data.get("public_key")
-    if room_id and public_key:
-        emit(
-            "receive_public_key",
-            {"public_key": public_key},
-            room=room_id,
-            include_self=False,
-        )
+    username = data.get("username")
+    if not room_id:
+        logger.error("Could not share public key due to missing room id")
+        return
+    if not public_key:
+        logger.error("Could not share public key due to missing key")
+        return
+    logger.info(f"Sharing public key of user '{username}'")
+    emit(
+        "receive_public_key",
+        {"public_key": public_key, "username": username},
+        room=room_id,
+        include_self=False,
+    )
 
 @socketio.on("leave_server")
 def handle_leave_server(data):

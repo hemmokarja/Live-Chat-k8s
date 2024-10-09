@@ -34,7 +34,7 @@ spec:
             - name: REDIS_PORT
               value: "6379"
             - name: ALB_DNS
-              value: "k8s-default-livechat-c766082308-763438279.eu-north-1.elb.amazonaws.com"
+              value: "k8s-default-livechat-c766082308-445536452.eu-north-1.elb.amazonaws.com"
 ---
 apiVersion: v1
 kind: Service
