@@ -140,9 +140,25 @@ update_kubectl_context() {
 }
 
 
-install_load_balancer_controller() {
-    echo "Installing AWS Load Balancer Controller..."
+# install_metrics_server() {
+#     echo "Installing Metrics Server..."
+#     kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
+    
+#     echo "Waiting for API service to be ready..."
+#     kubectl wait --for=condition=Available apiservice/v1beta1.metrics.k8s.io --timeout=5m
 
+#     echo "Waiting for Metrics Server deployment to be ready..."
+#     kubectl wait --for=condition=available deployment/metrics-server -n kube-system --timeout=5m
+# }
+
+
+install_load_balancer_controller() {
+    echo "Installing AWS Load Balancer Controller Service Account..."
+    helm upgrade -i service-account-release "$HELM_DIR/service-account-chart" \
+        --set "awsLoadBalancerControllerRoleArn=$AWS_LB_CONTROLLER_ROLE_ARN"
+    sleep 10
+    
+    echo "Installing AWS Load Balancer Controller..."
     helm repo add eks https://aws.github.io/eks-charts
     helm repo update
 
@@ -150,7 +166,7 @@ install_load_balancer_controller() {
         -n kube-system \
         --set "clusterName=$CLUSTER_NAME" \
         --set serviceAccount.create=false \
-        --set serviceAccount.name=aws-load-balancer-controller \
+        --set serviceAccount.name=aws-load-balancer-controller-service-account \
         --set "region=$REGION" \
         --set vpcId=$VPC_ID \
         --set "image.repository=602401143452.dkr.ecr.$REGION.amazonaws.com/amazon/aws-load-balancer-controller" \
@@ -160,19 +176,11 @@ install_load_balancer_controller() {
     kubectl wait --for=condition=Ready pods -l app.kubernetes.io/name=aws-load-balancer-controller \
         -n kube-system --timeout=4m
 
-    sleep 10  # for ensuring the aws-load-balancer-webhook-service webhook endpoint is ready
-
+    sleep 10  # for ensuring the aws-load-balancer-webhook-service webhook endpoint is ready   
 }
 
 
-install_alb() {
-    echo "Installing AWS Load Balancer Controller Service Account..."
-    helm upgrade -i sa-release "$HELM_DIR/sa-chart" \
-        --set "awsLoadBalancerControllerRoleArn=$AWS_LB_CONTROLLER_ROLE_ARN"
-    sleep 10
-
-    install_load_balancer_controller
-
+install_ingress() {
     echo "Installing AWS ALB..."
     helm upgrade -i ingress-release "$HELM_DIR/ingress-chart" \
         --set "acmCertificateArn=$ACM_CERTIFICATE_ARN" \
@@ -234,7 +242,9 @@ create_self_signed_ssl_cert
 init_terraform
 apply_terraform
 update_kubectl_context
-install_alb
+# install_metrics_server
+install_load_balancer_controller
+install_ingress
 get_alb_dns
 
 bash "$PUSH_IMAGE_SCRIPT" \

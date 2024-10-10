@@ -1,4 +1,4 @@
 apiVersion: v2
-name: aws-load-balancer-controller-sa-chart
+name: aws-load-balancer-controller-service-account-chart
 version: 1.0.0
 description: A Helm chart for AWS Load Balancer Controller Service Account

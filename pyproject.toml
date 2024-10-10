@@ -12,6 +12,7 @@ flask-socketio = "^5.3.7"
 redis = "^5.1.0"
 gevent = "^24.2.1"
 requests = "^2.32.3"
+gunicorn = "^23.0.0"
 
 
 [tool.poetry.group.dev.dependencies]

@@ -31,6 +31,8 @@ spec:
                   key: secret_key
             - name: BACKEND_URL
               value: "http://backend-service:{{ .Values.backendServicePort }}"
+            - name: CONTAINER_PORT
+              value: "{{ .Values.uiServicePort }}"
 ---
 apiVersion: v1
 kind: Service

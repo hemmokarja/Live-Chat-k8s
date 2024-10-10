@@ -30,11 +30,13 @@ spec:
                   name: flask-secret
                   key: secret_key
             - name: REDIS_HOST
-              value: "redis"
+              value: "redis-service"
             - name: REDIS_PORT
               value: "{{ .Values.redisPort }}"
             - name: ALB_DNS
               value: "{{ .Values.albDns }}"
+            - name: CONTAINER_PORT
+              value: "{{ .Values.backendServicePort }}"
 ---
 apiVersion: v1
 kind: Service

@@ -6,7 +6,7 @@ DOCKERFILE_PATH=$3
 CONTEXT_DIR=$4
 REGION=$5
 
-echo "Building and pushing image '${IMAGE_TAG}' to ECR repository (this might take a while)..."
+echo "Building and pushing image ${IMAGE_TAG}:latest to ECR (this might take a while)..."
 
 docker build \
     --no-cache \
@@ -33,4 +33,4 @@ docker tag \
 
 docker push "$AWS_ACCOUNT_ID.dkr.ecr.$REGION.amazonaws.com/$REPOSITORY_NAME:latest"
 
-echo "Built and pushed image '${IMAGE_TAG}' to ECR repository"
+echo "Built and pushed image ${IMAGE_TAG}:latest to ECR"

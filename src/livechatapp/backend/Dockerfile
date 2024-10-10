@@ -1,6 +1,5 @@
-FROM python:3.11
+FROM python:3.11-slim
 WORKDIR /app
 COPY . .
-RUN pip install flask flask-socketio gevent gunicorn redis
-EXPOSE 5000
-CMD ["gunicorn", "-w", "1", "-k", "gevent", "-b", "0.0.0.0:5000", "app:app"]
+RUN pip install --no-cache-dir -r requirements.txt
+CMD ["/bin/sh", "-c", "exec gunicorn -w 1 -k gevent -b 0.0.0.0:$CONTAINER_PORT app:app"]
