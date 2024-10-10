@@ -5,7 +5,7 @@ metadata:
   labels:
     app: redis
 spec:
-  replicas: 1
+  replicas: {{ .Values.numRedisReplicas }}
   selector:
     matchLabels:
       app: redis

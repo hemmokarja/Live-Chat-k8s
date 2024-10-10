@@ -1,40 +1,36 @@
 #!/bin/bash
 
-image_tag=$1
-repository_name=$2
-dockerfile_path=$3
-context_dir=$4
-region=$5
+IMAGE_TAG=$1
+REPOSITORY_NAME=$2
+DOCKERFILE_PATH=$3
+CONTEXT_DIR=$4
+REGION=$5
 
-echo "Pushing image '${image_tag}' to ECR repository '${repository_name}'..."
+echo "Building and pushing image '${IMAGE_TAG}' to ECR repository (this might take a while)..."
 
 docker build \
     --no-cache \
-    -f "$dockerfile_path" \
+    -f "$DOCKERFILE_PATH" \
     --platform linux/amd64 \
-    -t "$image_tag" \
-    "$context_dir" \
-    || { echo "Docker build failed for $image_tag. Aborting."; exit 1; }
+    -t "$IMAGE_TAG" \
+    "$CONTEXT_DIR"
 
-account_id=$(aws sts get-caller-identity | jq -r ".Account")
-if [[ -z "$account_id" ]]; then
-    echo "Failed to retrieve AWS account ID. Aborting."
+AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query "Account" --output text)
+if [[ -z "$AWS_ACCOUNT_ID" ]]; then
+    echo "Failed to retrieve AWS account ID. Exiting."
     exit 1
 fi
 
-aws ecr get-login-password --region "$region" | \
+aws ecr get-login-password --region "$REGION" | \
     docker login \
     --username AWS \
     --password-stdin \
-    "$account_id.dkr.ecr.$region.amazonaws.com" \
-    || { echo "ECR login failed for $image_tag. Aborting."; exit 1; }
+    "$AWS_ACCOUNT_ID.dkr.ecr.$REGION.amazonaws.com"
 
 docker tag \
-    "$image_tag:latest" \
-    "$account_id.dkr.ecr.$region.amazonaws.com/$repository_name:latest" \
-    || { echo "Docker tag failed for $image_tag. Aborting."; exit 1; }
+    "$IMAGE_TAG:latest" \
+    "$AWS_ACCOUNT_ID.dkr.ecr.$REGION.amazonaws.com/$REPOSITORY_NAME:latest"
 
-docker push "$account_id.dkr.ecr.$region.amazonaws.com/$repository_name:latest" \
-    || { echo "Docker push failed for $image_tag. Aborting."; exit 1; }
+docker push "$AWS_ACCOUNT_ID.dkr.ecr.$REGION.amazonaws.com/$REPOSITORY_NAME:latest"
 
-echo "Image $image_tag pushed successfully!"
+echo "Built and pushed image '${IMAGE_TAG}' to ECR repository"
