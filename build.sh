@@ -132,6 +132,13 @@ apply_terraform() {
     echo "ACM Certificate ARN: $ACM_CERTIFICATE_ARN"
 
     popd > /dev/null
+
+    echo "Checking if the EKS cluster API server is ready..."
+        until kubectl cluster-info &> /dev/null; do
+        echo "EKS API server not ready, waiting..."
+        sleep 5
+    done
+    echo "EKS API server is ready!"
 }
 
 
@@ -143,7 +150,7 @@ update_kubectl_context() {
 
 install_metrics_server() {
     echo "Installing Metrics Server..."
-    kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
+    kubectl apply -f "https://github.com/kubernetes-sigs/metrics-server/releases/download/$METRICS_SERVER_VERSION/components.yaml"
     
     echo "Waiting for API service to be ready..."
     kubectl wait --for=condition=Available apiservice/v1beta1.metrics.k8s.io --timeout=5m

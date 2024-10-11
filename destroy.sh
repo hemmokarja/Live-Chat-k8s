@@ -46,8 +46,8 @@ uninstall_load_balancer_controller() {
         helm uninstall aws-load-balancer-controller -n kube-system
         sleep 10
     else
-        echo "Load Balancer Controller release 'aws-load-balancer-controller' already uninstalled \
-            or doesn't exist."
+        echo "Load Balancer Controller release 'aws-load-balancer-controller' already uninstalled" \
+            "or doesn't exist."
     fi
 
     echo "Uninstalling AWS Load Balancer Controller Service Account..."
@@ -74,7 +74,7 @@ uninstall_app() {
 
 uninstall_metrics_server() {
     echo "Deleting Metrics Server components..."
-    kubectl delete -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
+    kubectl delete -f "https://github.com/kubernetes-sigs/metrics-server/releases/download/$METRICS_SERVER_VERSION/components.yaml" --ignore-not-found
 
     echo "Waiting for API service to be deleted..."
     until ! kubectl get apiservice v1beta1.metrics.k8s.io &> /dev/null; do
@@ -100,6 +100,7 @@ destroy_terraform() {
         -var "cluster_name=$CLUSTER_NAME" \
         -var "username=$USERNAME" \
         -var "region=$REGION" \
+        -var "eks_kubernetes_version=$EKS_KUBERNETES_VERSION" \
         -var "eks_instance_type=$EKS_INSTANCE_TYPE" \
         -var "eks_desired_nodes=$EKS_DESIRED_NODES" \
         -var "eks_min_nodes=$EKS_MIN_NODES" \
