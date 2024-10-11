@@ -45,7 +45,7 @@ To deploy the chat application, follow these steps:
    - Open `config.sh` to customize settings as needed. This is where you can fine-tune the app’s behavior.
    
 2. **Set Flask Secret**:
-   - Make sure to export the Flask secret key:
+   - Make sure to export the Flask secret key (you can set any value you like!):
      ```bash
      export FLASK_SECRET_KEY=<your-secret-key>
      ```
