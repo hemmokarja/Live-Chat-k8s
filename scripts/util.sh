@@ -16,9 +16,7 @@ check_config_variables() {
         "CLUSTER_NAME"
         "USERNAME"
         "REGION"
-        "BACKEND_MODULE_PORT"
-        "UI_MODULE_PORT"
-        "REDIS_PORT"
+        "EKS_KUBERNETES_VERSION"
         "EKS_INSTANCE_TYPE"
         "EKS_DESIRED_NODES"
         "EKS_MIN_NODES"
@@ -38,6 +36,9 @@ check_config_variables() {
         "UI_MEMORY_LIMIT"
         "UI_CPU_REQUEST"
         "UI_CPU_LIMIT"
+        "BACKEND_MODULE_PORT"
+        "UI_MODULE_PORT"
+        "REDIS_PORT"
     )
 
     local all_set=true
