@@ -15,6 +15,14 @@ variable "region" {
 }
 
 # EKS
+variable "eks_module_version" {
+  description = "Version of the EKS module"
+}
+
+variable "eks_kubernetes_version" {
+  description = "Version of Kubernetes running in the EKS module"
+}
+
 variable "eks_instance_type" {
   description = "Instance type of the EKS cluster worker nodes"
 }
