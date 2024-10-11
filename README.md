@@ -72,6 +72,7 @@ This project uses a self-signed SSL certificate, which is generated during the b
 ## Development Notes
 
 - The `build.sh` script is designed to be idempotent. You can run it multiple times without causing issues, which makes updating the app or reconfiguring resources a smooth experience. If you need to make changes to the app, simply update the code and run `build.sh` again.
+- You can access the cluster using kubectl commands from the IP address used during resource provisioning. However, to prevent inconsistencies in the Terraform state, it's recommended to avoid manual modifications to the cluster.
 - For testing purposes, the self-signed SSL certificate should be sufficient. However, in a production environment, consider using a trusted Certificate Authority for the SSL certificate to avoid browser warnings.
 
 ## License

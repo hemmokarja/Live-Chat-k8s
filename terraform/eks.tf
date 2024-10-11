@@ -3,7 +3,7 @@ data "aws_caller_identity" "current" {}
 
 module "eks" {
   source          = "terraform-aws-modules/eks/aws"
-  version         = var.eks_module_version
+  version         = "~> 20.0"
   cluster_name    = var.cluster_name
   cluster_version = var.eks_kubernetes_version
 

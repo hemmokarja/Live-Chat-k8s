@@ -94,7 +94,6 @@ apply_terraform() {
         -var "cluster_name=$CLUSTER_NAME" \
         -var "username=$USERNAME" \
         -var "region=$REGION" \
-        -var "eks_module_version=$EKS_MODULE_VERSION" \
         -var "eks_kubernetes_version=$EKS_KUBERNETES_VERSION" \
         -var "eks_instance_type=$EKS_INSTANCE_TYPE" \
         -var "eks_desired_nodes=$EKS_DESIRED_NODES" \

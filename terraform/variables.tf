@@ -14,11 +14,6 @@ variable "region" {
   description = "The AWS region to deploy resources"
 }
 
-# EKS
-variable "eks_module_version" {
-  description = "Version of the EKS module"
-}
-
 variable "eks_kubernetes_version" {
   description = "Version of Kubernetes running in the EKS module"
 }
@@ -39,7 +34,6 @@ variable "eks_max_nodes" {
   description = "Maximum number of EC2 instances in the EKS cluster"
 }
 
-# access
 variable "allowed_cidr" {
   description = "CIDR block defining IPs that can connect to the EKS control plane"
 }
