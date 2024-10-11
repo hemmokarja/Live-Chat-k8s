@@ -58,7 +58,7 @@ To deploy the chat application, follow these steps:
      - Configure `kubectl` to interact with your newly created EKS cluster from your machine.
 
 4. **Access the App**:
-   - After running `build.sh`, you'll be given a DNS address from the Application Load Balancer. You can access the app by visiting that URL.
+   - After running `build.sh`, you'll be given a DNS address from the Application Load Balancer. You and other users can access the app by visiting that URL.
    - Log in by entering a username, then click on another user’s name in the lobby to start a private chat.
 
 5. **Destroy Resources**:
