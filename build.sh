@@ -4,7 +4,7 @@ set -euo pipefail
 source config.sh
 source ./scripts/util.sh
 
-APP_DIR="./src/livechatapp"
+APP_DIR="./src/app"
 BACKEND_DIR="$APP_DIR/backend"
 UI_DIR="$APP_DIR/ui"
 PUSH_IMAGE_SCRIPT="./scripts/push_image.sh"
@@ -140,16 +140,16 @@ update_kubectl_context() {
 }
 
 
-# install_metrics_server() {
-#     echo "Installing Metrics Server..."
-#     kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
+install_metrics_server() {
+    echo "Installing Metrics Server..."
+    kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
     
-#     echo "Waiting for API service to be ready..."
-#     kubectl wait --for=condition=Available apiservice/v1beta1.metrics.k8s.io --timeout=5m
+    echo "Waiting for API service to be ready..."
+    kubectl wait --for=condition=Available apiservice/v1beta1.metrics.k8s.io --timeout=5m
 
-#     echo "Waiting for Metrics Server deployment to be ready..."
-#     kubectl wait --for=condition=available deployment/metrics-server -n kube-system --timeout=5m
-# }
+    echo "Waiting for Metrics Server deployment to be ready..."
+    kubectl wait --for=condition=available deployment/metrics-server -n kube-system --timeout=5m
+}
 
 
 install_load_balancer_controller() {
@@ -196,7 +196,7 @@ get_alb_dns() {
     local sleep_interval=5
 
     for ((i=1; i<=retries; i++)); do
-        ALB_DNS=$(kubectl get ingress live-chat-app-ingress -o \
+        ALB_DNS=$(kubectl get ingress live-chat-ingress -o \
             jsonpath="{.status.loadBalancer.ingress[0].hostname}")
 
         if [[ -n "$ALB_DNS" ]]; then
@@ -218,14 +218,26 @@ install_app() {
     helm upgrade -i app-release "$HELM_DIR/app-chart" \
         --set "awsAccountId=$AWS_ACCOUNT_ID" \
         --set "region=$REGION" \
-        --set "numBackendReplicas=$NUM_BACKEND_REPLICAS" \
-        --set "numUiReplicas=$NUM_UI_REPLICAS" \
-        --set "numRedisReplicas=$NUM_REDIS_REPLICAS" \
         --set "backendEcrRepositoryName=$BACKEND_REPOSITORY_NAME" \
         --set "uiEcrRepositoryName=$UI_REPOSITORY_NAME" \
         --set "backendServicePort=$BACKEND_MODULE_PORT" \
         --set "uiServicePort=$UI_MODULE_PORT" \
         --set "redisPort=$REDIS_PORT" \
+        --set "numRedisReplicas=$NUM_REDIS_REPLICAS" \
+        --set "backendMinReplicas=$BACKEND_MIN_REPLICAS" \
+        --set "backendMaxReplicas=$BACKEND_MAX_REPLICAS" \
+        --set "uiMinReplicas=$UI_MIN_REPLICAS" \
+        --set "uiMaxReplicas=$UI_MAX_REPLICAS" \
+        --set "backendTargetCpuUtilization=$BACKEND_TARGET_CPU_UTILIZATION_PCT" \
+        --set "uiTargetCpuUtilization=$UI_TARGET_CPU_UTILIZATION_PCT" \
+        --set "backendMemoryRequest=$BACKEND_MEMORY_REQUEST" \
+        --set "backendMemoryLimit=$BACKEND_MEMORY_LIMIT" \
+        --set "backendCpuRequest=$BACKEND_CPU_REQUEST" \
+        --set "backendCpuLimit=$BACKEND_CPU_LIMIT" \
+        --set "uiMemoryRequest=$UI_MEMORY_REQUEST" \
+        --set "uiMemoryLimit=$UI_MEMORY_LIMIT" \
+        --set "uiCpuRequest=$UI_CPU_REQUEST" \
+        --set "uiCpuLimit=$UI_CPU_LIMIT" \
         --set "albDns=$ALB_DNS" \
         --set "flaskSecretKey=$BASE64_SECRET_KEY"
     echo "Application deployments installed"
@@ -242,7 +254,7 @@ create_self_signed_ssl_cert
 init_terraform
 apply_terraform
 update_kubectl_context
-# install_metrics_server
+install_metrics_server
 install_load_balancer_controller
 install_ingress
 get_alb_dns
@@ -264,4 +276,4 @@ bash "$PUSH_IMAGE_SCRIPT" \
 install_app
 
 echo "Application launched successfully!"
-echo -e "\n\033[1;32mAccess the application at: \033[1;34m$ALB_DNS\033[0m\n"
+echo -e "\n\033[1;32mAccess the application at: \033[1;34mhttps://$ALB_DNS\033[0m\n"

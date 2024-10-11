@@ -5,7 +5,6 @@ metadata:
   labels:
     app: backend
 spec:
-  replicas: {{ .Values.numBackendReplicas }}
   selector:
     matchLabels:
       app: backend
@@ -37,6 +36,13 @@ spec:
               value: "{{ .Values.albDns }}"
             - name: CONTAINER_PORT
               value: "{{ .Values.backendServicePort }}"
+          resources:
+            requests:
+              memory: "{{ .Values.backendMemoryRequest }}"
+              cpu: "{{ .Values.backendCpuRequest }}"
+            limits:
+              memory: "{{ .Values.backendMemoryLimit }}"
+              cpu: "{{ .Values.backendCpuLimit }}"
 ---
 apiVersion: v1
 kind: Service

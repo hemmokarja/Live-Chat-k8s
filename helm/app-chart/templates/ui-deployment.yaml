@@ -5,7 +5,6 @@ metadata:
   labels:
     app: ui
 spec:
-  replicas: {{ .Values.numUiReplicas }}
   selector:
     matchLabels:
       app: ui
@@ -33,6 +32,13 @@ spec:
               value: "http://backend-service:{{ .Values.backendServicePort }}"
             - name: CONTAINER_PORT
               value: "{{ .Values.uiServicePort }}"
+          resources:
+            requests:
+              memory: "{{ .Values.uiMemoryRequest }}"
+              cpu: "{{ .Values.uiCpuRequest }}"
+            limits:
+              memory: "{{ .Values.uiMemoryLimit }}"
+              cpu: "{{ .Values.uiCpuLimit }}"
 ---
 apiVersion: v1
 kind: Service

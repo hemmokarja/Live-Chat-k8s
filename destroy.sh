@@ -10,7 +10,7 @@ AWS_ACCOUNT_ID=""
 
 
 uninstall_ingress() {
-    local retries=120
+    local retries=60
     local sleep_interval=5
     
     echo "Uninstalling ingress..."
@@ -21,11 +21,12 @@ uninstall_ingress() {
     fi
 
     echo "Waiting for ingress resource to be destroyed..."
+    # it's necessary to remove the ingress and destroy the ALB before proceeding to 
+    # remove the controller, otherwise the 
+    # for more see e.g.: https://github.com/hashicorp/terraform-provider-helm/issues/474
     for ((i=1; i<=retries; i++)); do
-        local ingress_status=$(kubectl get ingress live-chat-app-ingress --ignore-not-found)
-        
-        if [[ -z "$ingress_status" ]]; then
-            echo "Ingress resource 'live-chat-app-ingress' destroyed"
+        if ! kubectl get ingress live-chat-ingress &> /dev/null; then
+            echo "Ingress resource 'live-chat-ingress' destroyed"
             sleep 10
             return 0
         fi
@@ -68,6 +69,24 @@ uninstall_app() {
     else
         echo "App release 'app-release' already uninstalled or doesn't exist."
     fi
+}
+
+
+uninstall_metrics_server() {
+    echo "Deleting Metrics Server components..."
+    kubectl delete -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
+
+    echo "Waiting for API service to be deleted..."
+    until ! kubectl get apiservice v1beta1.metrics.k8s.io &> /dev/null; do
+        echo "API service still exists, waiting..."
+        sleep 5
+    done
+
+    echo "Waiting for Metrics Server deployment to be deleted..."
+    until ! kubectl get deployment metrics-server -n kube-system &> /dev/null; do
+        echo "Deployment still exists, waiting..."
+        sleep 5
+    done
 }
 
 
@@ -115,6 +134,7 @@ get_aws_account_id
 uninstall_ingress
 uninstall_load_balancer_controller
 uninstall_app
+uninstall_metrics_server
 destroy_terraform
 delete_kube_context
 delete_cert_dir

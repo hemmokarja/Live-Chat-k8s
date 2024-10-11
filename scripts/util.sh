@@ -23,17 +23,29 @@ check_config_variables() {
         "EKS_DESIRED_NODES"
         "EKS_MIN_NODES"
         "EKS_MAX_NODES"
-        "NUM_BACKEND_REPLICAS"
-        "NUM_UI_REPLICAS"
         "NUM_REDIS_REPLICAS"
+        "BACKEND_MIN_REPLICAS"
+        "BACKEND_MAX_REPLICAS"
+        "BACKEND_TARGET_CPU_UTILIZATION_PCT"
+        "UI_MIN_REPLICAS"
+        "UI_MAX_REPLICAS"
+        "UI_TARGET_CPU_UTILIZATION_PCT"
+        "BACKEND_MEMORY_REQUEST"
+        "BACKEND_MEMORY_LIMIT"
+        "BACKEND_CPU_REQUEST"
+        "BACKEND_CPU_LIMIT"
+        "UI_MEMORY_REQUEST"
+        "UI_MEMORY_LIMIT"
+        "UI_CPU_REQUEST"
+        "UI_CPU_LIMIT"
     )
 
     local all_set=true
 
     for var in "${required_vars[@]}"; do
         if [ -z "${!var}" ]; then
-        echo "Error: $var is not set."
-        all_set=false
+            echo "Error: $var is not set."
+            all_set=false
         fi
     done
 
