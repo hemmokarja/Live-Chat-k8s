@@ -64,7 +64,7 @@ To deploy the chat application, follow these steps:
 5. **Destroy Resources**:
    - To clean up after you're done, run `destroy.sh`. This will remove all the AWS resources created during the setup process, including Terraform-managed infrastructure and Kubernetes deployments.
 
-## 🔒 SSL Certificate
+## 🔒 SSL Certificate Note
 
 This project uses a self-signed SSL certificate, which is generated during the build process with `build.sh`. While this works for testing and development, note that browsers will warn users when accessing the app since the certificate is not from a recognized Certificate Authority (CA). For production, you should use a CA-signed certificate, which can be configured with AWS and Terraform. (This would require purchasing a domain for a year at minumum, and thus isn't suitable for this project).
 
