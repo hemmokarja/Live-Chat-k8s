@@ -33,7 +33,7 @@ Before you can deploy the application, make sure you have the following availabl
   - **Terraform (>= 1.3.2)**
   - **Docker**
   - **Helm**
-  - **Kubectl**
+  - **Kubectl**: The kubectl version should be within one minor version of the Kubernetes version used by EKS (i.e., either one version higher or lower). By default, the app is configured to use Kubernetes 1.31.
   - **OpenSSL**
 
 ## 🚀 Getting Started
