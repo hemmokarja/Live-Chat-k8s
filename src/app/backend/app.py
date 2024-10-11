@@ -277,5 +277,4 @@ def handle_leave_server(data):
 
 
 if __name__ == "__main__":
-    logger.info("Starting WebSocket server...")
-    socketio.run(app, host="0.0.0.0", port=5000)
+    socketio.run(app, host="0.0.0.0", port=os.environ["CONTAINER_PORT"])
