@@ -1,28 +1,27 @@
-# Live Chat Application
+# 💬 Live Chat
 
-Welcome to the **Live Chat Application**! This app allows users to chat privately, one-on-one, in real time. Built with privacy and scalability in mind, the app ensures end-to-end encryption, highly available infrastructure, and an effortless deployment process. It's a great example of integrating modern cloud technologies like Kubernetes, Terraform, and AWS to deliver a robust and secure chat platform.
+Welcome to the **Live Chat**! This app allows users to chat privately, one-on-one, in real time. Built with privacy and scalability in mind, the app ensures end-to-end encryption, highly available infrastructure, and an effortless deployment process. It's a great example of integrating modern cloud technologies like Kubernetes, Terraform, and AWS to deliver a robust and secure chat platform.
 
-## Features
+## ⚙️ Features
 
 - **1-on-1 Private Chat**: Engage in private conversations with other users.
 - **Real-Time Communication**: Uses WebSocket connections to enable live, real-time chat.
-- **Strong Encryption**: All messages are encrypted with AES symmetric encryption, and the AES keys themselves are secured with RSA encryption.
 - **Secure by Default**: All communication is over HTTPS, ensuring privacy.
+- **Strong Encryption**: All messages are encrypted with AES symmetric encryption, and the AES keys themselves are secured with RSA encryption.
 - **High Availability**: The app runs on an AWS EKS cluster spread across multiple availability zones, ensuring continuous operation even if some components fail or availability zones go down.
 - **Scalable Architecture**: Designed to handle increasing loads with ease.
   - **Modular Architecture**: The backend (handling WebSocket traffic and user state) is separate from the UI module (serving web pages), enabling granular scalability.
   - **Autoscaling**: Both cluster and horizontal pod autoscaling are implemented to accommodate virtually unlimited users.
 - **Redis Integration**: Redis is used as a message broker between backend pods and as an in-memory database to manage user state efficiently.
 
-
-## Built With
+## 🛠️ Built With
 
 - **Backend**: Python, Flask, Flask-SocketIO
 - **Frontend**: JavaScript, HTML, CSS
 - **Infrastructure**: AWS Elastic Kubernetes Service (EKS), Helm for Kubernetes deployment, Terraform for resource provisioning
 - **Message Broker & Cache**: Redis
 
-## Requirements
+## 📝 Requirements
 
 Before you can deploy the application, make sure you have the following available on your local machine:
 
@@ -37,7 +36,7 @@ Before you can deploy the application, make sure you have the following availabl
   - **Kubectl**
   - **OpenSSL**
 
-## Getting Started
+## 🚀 Getting Started
 
 To deploy the chat application, follow these steps:
 
@@ -65,17 +64,20 @@ To deploy the chat application, follow these steps:
 5. **Destroy Resources**:
    - To clean up after you're done, run `destroy.sh`. This will remove all the AWS resources created during the setup process, including Terraform-managed infrastructure and Kubernetes deployments.
 
-## SSL Certificate
+## 🔒 SSL Certificate
 
 This project uses a self-signed SSL certificate, which is generated during the build process with `build.sh`. While this works for testing and development, note that browsers will warn users when accessing the app since the certificate is not from a recognized Certificate Authority (CA). For production, you should use a CA-signed certificate, which can be configured with AWS and Terraform. (This would require purchasing a domain for a year at minumum, and thus isn't suitable for this project).
 
-## Development Notes
+## 🔧 Development Notes
 
 - The `build.sh` script is designed to be idempotent. You can run it multiple times without causing issues, which makes updating the app or reconfiguring resources a smooth experience. If you need to make changes to the app, simply update the code and run `build.sh` again.
 - You can access the cluster using kubectl commands from the IP address used during resource provisioning. However, to prevent inconsistencies in the Terraform state, it's recommended to avoid manual modifications to the cluster.
 - For testing purposes, the self-signed SSL certificate should be sufficient. However, in a production environment, consider using a trusted Certificate Authority for the SSL certificate to avoid browser warnings.
 
-## License
+## 📝 Other Notes
+
+Please keep in mind that this project is intended as a personal project, primarily for learning and experimentation. While it includes robust features like encryption, autoscaling, and high availability, not all aspects are production-ready.
+
+## 📜 License
 
 This project is licensed under the [MIT License](https://opensource.org/licenses/MIT). You are free to use, modify, and distribute the software as long as you include the original copyright and license notice. For more details, please refer to the full text of the license.
-
