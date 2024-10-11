@@ -41,13 +41,6 @@ manager = RedisChatManager(host=redis_host, port=redis_port, db=1)
 def index():
     return "WebSocket server running!"
 
-@app.route("/api/container_id", methods=["GET"])
-def container_id():
-    # TODO remove after not necessary
-    import socket
-    container_id = socket.gethostname()
-    return jsonify({"container_id": container_id}), 200
-
 @app.route("/api/check_username", methods=["POST"])
 def check_username():
     data = request.get_json()

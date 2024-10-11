@@ -51,13 +51,8 @@ def chat_room():
     data = response.json()
     if not data.get("authorized"):
         return render_template("unauthorized.html"), 403
-    
-    # TODO remove after not necessary
-    response = requests.get(f"{backend_url}/api/container_id")
-    data = response.json()
-    container_id = data.get("container_id")
 
-    return render_template("chat_room.html", room_id=room_id, username=username, container_id=container_id)
+    return render_template("chat_room.html", room_id=room_id, username=username)
 
 @app.route("/unauthorized")
 def unauthorized():
