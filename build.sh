@@ -133,18 +133,16 @@ apply_terraform() {
 
     popd > /dev/null
 
-    echo "Checking if the EKS cluster API server is ready..."
-        until kubectl cluster-info &> /dev/null; do
-        echo "EKS API server not ready, waiting..."
-        sleep 5
-    done
-    echo "EKS API server is ready!"
+    sleep 10
 }
 
 
 update_kubectl_context() {
     echo "Updating kubectl config and selecting context..."
     aws eks --region $REGION update-kubeconfig --name $CLUSTER_NAME
+    kubectl config use-context arn:aws:eks:$REGION:$AWS_ACCOUNT_ID:cluster/$CLUSTER_NAME
+    echo "Current kubectl context:"
+    kubectl config current-context
 }
 
 
@@ -265,7 +263,7 @@ update_kubectl_context
 install_metrics_server
 install_load_balancer_controller
 install_ingress
-get_alb_dns
+get_alb_dns``
 
 bash "$PUSH_IMAGE_SCRIPT" \
     "backend_module" \
