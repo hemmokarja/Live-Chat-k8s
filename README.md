@@ -41,7 +41,7 @@ Before you can deploy the application, make sure you have the following availabl
 To deploy the chat application, follow these steps:
 
 1. **Review Configuration**: 
-   - Open `config.sh` to customize settings as needed. This is where you can fine-tune the app’s behavior.
+   - Open `config.sh` to customize settings as needed.
    
 2. **Set Flask Secret**:
    - Make sure to export the Flask secret key (you can set any value you like!):
@@ -59,7 +59,7 @@ To deploy the chat application, follow these steps:
 
 4. **Access the App**:
    - After running `build.sh`, you'll be given a DNS address from the Application Load Balancer. You and other users can access the app by visiting that URL.
-   - Log in by entering a username, then click on another user’s name in the lobby to start a private chat.
+   - Log in by entering a username, then click on another user's name in the lobby to start a private chat.
 
 5. **Destroy Resources**:
    - To clean up after you're done, run `destroy.sh`. This will remove all the AWS resources created during the setup process, including Terraform-managed infrastructure and Kubernetes deployments.
