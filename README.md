@@ -30,10 +30,10 @@ Before you can deploy the application, make sure you have the following availabl
 - **AWS Credentials**: Set up as environment variables (`AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY`).
 - **Tools**
   - **AWS CLI**
-  - **Terraform (>= 1.3.2)**
+  - **Terraform** (>= 1.3.2.)
   - **Docker**
   - **Helm**
-  - **Kubectl**: The kubectl version should be within one minor version of the Kubernetes version used by EKS (i.e., either one version higher or lower). By default, the app is configured to use Kubernetes 1.31.
+  - **Kubectl** (the kubectl version should be within one minor version of the Kubernetes version used by EKS (i.e., either one version higher or lower). By default, the app is configured to use Kubernetes 1.31.)
   - **OpenSSL**
 
 ## 🚀 Getting Started
