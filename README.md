@@ -66,7 +66,7 @@ To deploy the chat application, follow these steps:
 
 ## 🔒 SSL Certificate Note
 
-This project uses a self-signed SSL certificate, which is generated during the build process with `build.sh`. While this works for testing and development, note that browsers will warn users when accessing the app since the certificate is not from a recognized Certificate Authority (CA). For production, you should use a CA-signed certificate, which can be configured with AWS and Terraform. (This would require purchasing a domain for a year at minumum, and thus isn't suitable for this project).
+This project uses a self-signed SSL certificate, which is generated during the build process with `build.sh`. While this works for testing and development, note that browsers will warn users when accessing the app since the certificate is not from a recognized Certificate Authority (CA). For production, you should use a CA-signed certificate, which can be configured with AWS and Terraform. (This would require purchasing a domain for a year at minumum, and thus isn't suitable here considering the scope and nature of this project).
 
 ## 🔧 Development Notes
 
@@ -76,7 +76,7 @@ This project uses a self-signed SSL certificate, which is generated during the b
 
 ## 📝 Other Notes
 
-Please keep in mind that this project is intended as a personal project, primarily for learning and experimentation. While it includes robust features like encryption, autoscaling, and high availability, not all aspects are production-ready.
+Please keep in mind that this project is intended as a personal project, primarily for learning and experimentation. While it includes robust features like encryption, autoscaling, and high availability, not all aspects are designed to be production-ready.
 
 ## 📜 License
 
