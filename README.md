@@ -11,7 +11,7 @@ Welcome to the **Live Chat**! This app allows users to chat privately, one-on-on
 - **High Availability**: The app runs on an AWS EKS cluster spread across multiple availability zones, ensuring continuous operation even if some components fail or availability zones go down.
 - **Scalable Architecture**: Designed to handle increasing loads with ease.
   - **Modular Architecture**: The backend (handling WebSocket traffic and user state) is separate from the UI module (serving web pages), enabling granular scalability.
-  - **Autoscaling**: Both cluster and horizontal pod autoscaling are implemented to accommodate virtually unlimited users.
+  - **Autoscaling**: Both cluster and horizontal pod autoscaling are implemented to accommodate virtually unlimited users, scaling up and down dynamically depending on demand.
 - **Redis Integration**: Redis is used as a message broker between backend pods and as an in-memory database to manage user state efficiently.
 
 ## 🛠️ Built With
