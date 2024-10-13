@@ -1,6 +1,8 @@
 # 💬 Live Chat
 
-Welcome to the **Live Chat**! This app allows users to chat privately, one-on-one, in real time. Built with privacy and scalability in mind, the app ensures end-to-end encryption, highly available infrastructure, and an effortless deployment process. It's a great example of integrating modern cloud technologies like Kubernetes, Terraform, and AWS to deliver a robust and secure chat platform.
+Welcome to the Live Chat! This app allows users to chat privately, one-on-one, in real time. Built with privacy and scalability in mind, the app ensures end-to-end encryption, highly available infrastructure, and an effortless deployment process. This project leverages modern cloud technologies like Kubernetes, Terraform, and AWS to create a secure and scalable chat platform.
+
+Please keep in mind that this project is intended as a personal project, primarily for learning and experimentation. While it includes robust features like encryption, autoscaling, and high availability, not all aspects are designed to be production-ready.
 
 ## ⚙️ Features
 
@@ -12,7 +14,8 @@ Welcome to the **Live Chat**! This app allows users to chat privately, one-on-on
 - **Scalable Architecture**: Designed to handle increasing loads with ease.
   - **Modular Architecture**: The backend (handling WebSocket traffic and user state) is separate from the UI module (serving web pages), enabling granular scalability.
   - **Autoscaling**: Both cluster and horizontal pod autoscaling are implemented to accommodate virtually unlimited users, scaling up and down dynamically depending on demand.
-- **Redis Integration**: Redis is used as a message broker between backend pods and as an in-memory database to manage user state efficiently.
+- **Redis Integration**: Redis is used as a message broker between backend pods and as an in-memory database to manage user state efficiently.  
+  *Note: In this intermediate version, the app supports only a single Redis replica (as the PUB/SUB mechanism cannot be directly scaled), which limits Redis scalability. This will be addressed in future versions to enable full scaling alongside the rest of the app.*
 
 ## 🛠️ Built With
 
@@ -73,10 +76,6 @@ This project uses a self-signed SSL certificate, which is generated during the b
 - The `build.sh` script is designed to be idempotent. You can run it multiple times without causing issues, which makes updating the app or reconfiguring resources a smooth experience. If you need to make changes to the app, simply update the code and run `build.sh` again.
 - You can access the cluster using kubectl commands from the IP address used during resource provisioning. However, to prevent inconsistencies in the Terraform state, it's recommended to avoid manual modifications to the cluster.
 - For testing purposes, the self-signed SSL certificate should be sufficient. However, in a production environment, consider using a trusted Certificate Authority for the SSL certificate to avoid browser warnings.
-
-## 📝 Other Notes
-
-Please keep in mind that this project is intended as a personal project, primarily for learning and experimentation. While it includes robust features like encryption, autoscaling, and high availability, not all aspects are designed to be production-ready.
 
 ## 📜 License
 
