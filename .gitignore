@@ -1,2 +1,9 @@
 .venv
 __pycache__/
+terraform.tfstate
+terraform.tfstate.*
+*.tfstate.backup
+.terraform.lock.hcl
+.terraform/
+.cert/
+.DS_Store

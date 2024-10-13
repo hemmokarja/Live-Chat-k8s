@@ -1,14 +1,16 @@
 from gevent import monkey
+
 # ugly, but required, see for more:
 # https://flask-socketio.readthedocs.io/en/latest/deployment.html#using-multiple-workers
 monkey.patch_all()
 
+import os
 import logging
 import sys
 
+from chat_manager import RedisChatManager
 from flask import Flask, jsonify, request
 from flask_socketio import SocketIO, emit, join_room, leave_room
-from chat_manager import RedisChatManager
 
 logging.basicConfig(
     level=logging.INFO,
@@ -18,36 +20,38 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
-app.config["ENV"] = "production"
-app.config["DEBUG"] = False
-app.config["SECRET_KEY"] = "your_secret_key"
+app.config["ENV"] = os.environ["FLASK_ENV"]
+app.config["DEBUG"] = os.environ["FLASK_DEBUG"]
+app.config["SECRET_KEY"] = os.environ["FLASK_SECRET_KEY"]
+
+alb_dns = os.environ["ALB_DNS"]
+redis_host = os.environ["REDIS_HOST"]
+redis_port = os.environ["REDIS_PORT"]
 socketio = SocketIO(
     app,
-    cors_allowed_origins=["http://localhost:9999"],
-    message_queue="redis://redis:6379/0",
+    cors_allowed_origins=[f"https://{alb_dns}"],
+    message_queue=f"redis://{redis_host}:{redis_port}/0",
+    logger=True,
     engineio_logger=True
 )
-manager = RedisChatManager(host="redis", port=6379, db=1)
+manager = RedisChatManager(host=redis_host, port=redis_port, db=1)
 
 
 @app.route("/api/")
 def index():
+    logger.info("Index endpoint hit")
     return "WebSocket server running!"
-
-@app.route("/api/container_id", methods=["GET"])
-def container_id():
-    # TODO remove after not necessary
-    import socket
-    container_id = socket.gethostname()
-    return jsonify({"container_id": container_id}), 200
 
 @app.route("/api/check_username", methods=["POST"])
 def check_username():
     data = request.get_json()
     username = data.get("username")
+    logger.info(f"Checking availability for username: {username}")
     user = manager.get_user(username)
     if user:
+        logger.info(f"Username '{username}' is already taken")
         return jsonify({"available": False}), 200
+    logger.info(f"Username '{username}' is available")
     return jsonify({"available": True}), 200
 
 @app.route("/api/verify_room_access", methods=["POST"])
@@ -55,38 +59,44 @@ def verify_room_access():
     data = request.get_json()
     room_id = data.get("room_id")
     username = data.get("username")
+    logger.info(f"Verifying room access for username: {username} in room: {room_id}")
     if manager.user_authorized_in_room(username, room_id):
+        logger.info(f"Access granted for user '{username}' to room '{room_id}'")
         return jsonify({"authorized": True}), 200
     else:
-        logger.warning(f"Failed room verification to room '{room_id}' by {username}")
+        logger.warning(f"Access denied for user '{username}' to room '{room_id}'")
         return jsonify({"authorized": False}), 200    
 
-@socketio.on("join_lobby", namespace="/socket.io")
+@socketio.on("join_lobby")
 def handle_join_lobby(data):
     username = data.get("username")
     if not username:
-        return False  # Reject the connection
+        logger.warning("Attempt to join lobby without a username")
+        return False  # reject the connection
     user = manager.get_user(username)
     if not user:
-        logger.info(f"Adding new user '{username}'")
+        logger.info(f"Adding new user '{username}' to the server")
         manager.add_user(username)
     join_room(username)
+    logger.info(f"User '{username}' joined the lobby")
     emit("update_user_list", manager.list_users_in_lobby(), broadcast=True)
 
-@socketio.on("chat_request", namespace="/socket.io")
+@socketio.on("chat_request")
 def handle_chat_request(data):
     from_username = data.get("from_user")
     to_username = data.get("to_user")
+
+    logger.info(f"User '{from_username}' requested chat with '{to_username}'")
 
     from_user = manager.get_user(from_username)
     to_user = manager.get_user(to_username)
 
     if not from_user:
-        logger.warning(f"Could not find from_user '{from_user}'")
+        logger.error(f"Could not find from_user '{from_username}'")
         return
 
     if not to_user:
-        logger.warning(f"Could not find to_user '{from_user}'")
+        logger.error(f"Could not find to_user '{to_username}'")
         return
 
     # prevent multiple pending requests from the same user
@@ -103,23 +113,31 @@ def handle_chat_request(data):
         return
 
     if not to_user["in_room"]:
+        logger.info(f"User '{to_username}' is not in a room, pending request added")
         manager.add_pending_request(from_username, to_username)
         emit("chat_request", {"from_user": from_username}, room=to_username)
     else:
+        logger.info(f"User '{to_username}' is already in a room, request denied")
         emit(
             "chat_response",
             {"accepted": False, "message": "User not available"},
             room=from_username
         )
 
-@socketio.on("chat_response", namespace="/socket.io")
+@socketio.on("chat_response")
 def handle_chat_response(data):
     from_username = data.get("to_user")
     to_username = data.get("from_user")  # the user who sent the request
     accepted = data.get("accepted")
 
     if not from_username or not to_username:
+        logger.error("Missing username in chat response")
         return
+
+    logger.info(
+        f"Chat response from '{from_username}' to '{to_username}': "
+        f"{'accepted' if accepted else 'declined'}"
+    )
 
     from_user = manager.get_user(from_username)
     to_user = manager.get_user(to_username)
@@ -130,6 +148,10 @@ def handle_chat_response(data):
             manager.remove_pending_request(to_username)
             if accepted:
                 chatroom = manager.create_chatroom(to_user, from_user)
+                logger.info(
+                    f"Chatroom '{chatroom['id']}' created between '{from_username}' "
+                    f"and '{to_username}'"
+                )
                 emit(
                     "chat_response",
                     {
@@ -149,36 +171,45 @@ def handle_chat_response(data):
                     room=from_username
                 )
             else:
-                # notify the requesting user that the request was declined
+                logger.info(
+                    f"Chat request from '{to_username}' was declined by "
+                    f"'{from_username}'"
+                )
                 emit(
                     "chat_response",
                     {"accepted": False, "message": "Chat request declined"},
                     room=to_username
                 )
         else:
+            logger.error(f"No pending chat request found for '{from_username}'")
             emit(
                 "chat_response",
                 {"accepted": False, "message": "No pending chat request found"},
                 room=from_username
             )
 
-@socketio.on("join_room", namespace="/socket.io")
+@socketio.on("join_room")
 def handle_join_room(data):
     username = data.get("username")
     room_id = data.get("room_id")
+    logger.info(f"User '{username}' attempting to join room '{room_id}'")
     if manager.user_authorized_in_room(username, room_id):
+        logger.info(f"User '{username}' successfully joined room '{room_id}'")
         join_room(room_id)
         emit("join_room_success", {"message": "Joined room successfully"})
         emit("update_user_list", manager.list_users_in_lobby(), broadcast=True)
     else:
-        logger.warning(f"Unauthorized attempt to join room '{room_id}' by {username}")
+        logger.warning(
+            f"Unauthorized attempt by user '{username}' to join room '{room_id}'"
+        )
         emit("join_room_failure", {"message": "Unauthorized access"})
 
-@socketio.on("leave_room", namespace="/socket.io")
+@socketio.on("leave_room")
 def handle_leave_room(data):
     username = data.get("username")
     room_id = data.get("room_id")
     if manager.user_authorized_in_room(username, room_id):
+        logger.info(f"User '{username}' left room '{room_id}'")
         emit(
             "receive_message",
             {"message": "has left the chat", "username": username, "type": "system"},
@@ -189,7 +220,7 @@ def handle_leave_room(data):
         manager.leave_chatroom(username, room_id)
         emit("update_user_list", manager.list_users_in_lobby(), broadcast=True)
 
-@socketio.on("send_message", namespace="/socket.io")
+@socketio.on("send_message")
 def handle_send_message(data):
     room_id = data.get("room_id")
     aes_key = data.get("aes_key")
@@ -197,6 +228,7 @@ def handle_send_message(data):
     message = data.get("message")
     username = data.get("username")
     if manager.user_authorized_in_room(username, room_id):
+        logger.info(f"User '{username}' sent a message to room '{room_id}'")
         emit(
             "receive_message",
             {
@@ -210,28 +242,39 @@ def handle_send_message(data):
             include_self=False
         )
     else:
+        logger.warning(
+            f"Unauthorized message send attempt by '{username}' to room '{room_id}'"
+        )
         emit("error", {"message": "Unauthorized"})
 
-@socketio.on("share_public_key", namespace="/socket.io")
+@socketio.on("share_public_key")
 def handle_share_public_key(data):
     room_id = data.get("room_id")
     public_key = data.get("public_key")
-    if room_id and public_key:
-        emit(
-            "receive_public_key",
-            {"public_key": public_key},
-            room=room_id,
-            include_self=False,
-        )
+    username = data.get("username")
+    if not room_id:
+        logger.error("Could not share public key due to missing room id")
+        return
+    if not public_key:
+        logger.error("Could not share public key due to missing key")
+        return
+    logger.info(f"Sharing public key of user '{username}' in room '{room_id}'")
+    emit(
+        "receive_public_key",
+        {"public_key": public_key, "username": username},
+        room=room_id,
+        include_self=False,
+    )
 
-@socketio.on("leave_server", namespace="/socket.io")
+@socketio.on("leave_server")
 def handle_leave_server(data):
     username = data.get("username")
     user = manager.get_user(username)
     if user:
+        logger.info(f"User '{username}' is leaving the server")
         manager.remove_user(username)
         emit("update_user_list", manager.list_users_in_lobby(), broadcast=True)
 
 
 if __name__ == "__main__":
-    socketio.run(app, host="0.0.0.0", port=5000)
+    socketio.run(app, host="0.0.0.0", port=os.environ["CONTAINER_PORT"])

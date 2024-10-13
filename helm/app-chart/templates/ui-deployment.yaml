@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ui-deployment
+  labels:
+    app: ui
+spec:
+  selector:
+    matchLabels:
+      app: ui
+  template:
+    metadata:
+      labels:
+        app: ui
+    spec:
+      containers:
+        - name: ui
+          image: "{{ .Values.awsAccountId }}.dkr.ecr.{{ .Values.region }}.amazonaws.com/{{ .Values.uiEcrRepositoryName }}:latest"
+          ports:
+            - containerPort: {{ .Values.uiServicePort }}
+          env:
+            - name: FLASK_ENV
+              value: "production"
+            - name: FLASK_DEBUG
+              value: "false"
+            - name: FLASK_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: flask-secret
+                  key: secret_key
+            - name: BACKEND_URL
+              value: "http://backend-service:{{ .Values.backendServicePort }}"
+            - name: CONTAINER_PORT
+              value: "{{ .Values.uiServicePort }}"
+          resources:
+            requests:
+              memory: "{{ .Values.uiMemoryRequest }}"
+              cpu: "{{ .Values.uiCpuRequest }}"
+            limits:
+              memory: "{{ .Values.uiMemoryLimit }}"
+              cpu: "{{ .Values.uiCpuLimit }}"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ui-service
+  labels:
+    app: ui
+spec:
+  type: ClusterIP
+  selector:
+    app: ui
+  ports:
+    - protocol: TCP
+      port: {{ .Values.uiServicePort }}
+      targetPort: {{ .Values.uiServicePort }}

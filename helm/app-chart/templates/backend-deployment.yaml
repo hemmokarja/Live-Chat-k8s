@@ -1,0 +1,60 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend-deployment
+  labels:
+    app: backend
+spec:
+  selector:
+    matchLabels:
+      app: backend
+  template:
+    metadata:
+      labels:
+        app: backend
+    spec:
+      containers:
+        - name: backend
+          image: "{{ .Values.awsAccountId }}.dkr.ecr.{{ .Values.region }}.amazonaws.com/{{ .Values.backendEcrRepositoryName }}:latest"
+          ports:
+            - containerPort: {{ .Values.backendServicePort }}
+          env:
+            - name: FLASK_ENV
+              value: "production"
+            - name: FLASK_DEBUG
+              value: "false"
+            - name: FLASK_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: flask-secret
+                  key: secret_key
+            - name: REDIS_HOST
+              value: "redis-service"
+            - name: REDIS_PORT
+              value: "{{ .Values.redisPort }}"
+            - name: ALB_DNS
+              value: "{{ .Values.albDns }}"
+            - name: CONTAINER_PORT
+              value: "{{ .Values.backendServicePort }}"
+          resources:
+            requests:
+              memory: "{{ .Values.backendMemoryRequest }}"
+              cpu: "{{ .Values.backendCpuRequest }}"
+            limits:
+              memory: "{{ .Values.backendMemoryLimit }}"
+              cpu: "{{ .Values.backendCpuLimit }}"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend-service
+  labels:
+    app: backend
+spec:
+  type: ClusterIP
+  selector:
+    app: backend
+  ports:
+    - protocol: TCP
+      port: {{ .Values.backendServicePort }}
+      targetPort: {{ .Values.backendServicePort }}
