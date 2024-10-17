@@ -1,0 +1,129 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: redis-sentinel
+spec:
+  serviceName: redis-userstate-sentinel-service
+  replicas: {{ .Values.numRedisSentinelReplicas }}
+  selector:
+    matchLabels:
+      app: redis-userstate-sentinel
+  template:
+    metadata:
+      labels:
+        app: redis-userstate-sentinel
+    spec:
+      initContainers:
+      - name: bootstrap-sentinel
+        image: "redis:{{ .Values.redisVersion }}"
+        command: [ "sh", "-c" ]
+        args:
+          - |
+            #!/bin/bash
+
+            QUORUM=$(( $NUM_REDIS_SENTINEL_REPLICAS / 2 + 1 ))
+
+            # Initialize /tmp/master
+            > /tmp/master
+
+            # Split nodes into master groups and find each group's master
+            for master_index in $(seq 0 $(( $NUM_REDIS_MASTER_REPLICAS - 1 )))
+            do
+                GROUP_START=$(( $master_index * ( $NUM_REDIS_SLAVES_PER_MASTER + 1 ) ))
+                GROUP_END=$(( $GROUP_START + $NUM_REDIS_SLAVES_PER_MASTER ))
+                
+                # Find the master for this group
+                for i in $(seq $GROUP_START $GROUP_END)
+                do
+                    NODE_DNS="redis-$i.redis-userstate-service.default.svc.cluster.local"
+                    MASTER_IP=$(
+                        redis-cli --no-auth-warning --raw -h $NODE_DNS -a $REDIS_PASSWORD \
+                        info replication | grep master_host: | cut -d ":" -f2
+                    )
+                    
+                    if [ "$MASTER_IP" = "" ]; then
+                        echo "No master found at $NODE_DNS"
+                    else
+                        echo "Found master IP $MASTER_IP at node $NODE_DNS"
+                        break
+                    fi
+                done
+
+                # Append sentinel configuration for this master
+                cat <<EOF >> /tmp/master
+            sentinel monitor mymaster-$master_index $MASTER_IP $REDIS_PORT $QUORUM
+            sentinel down-after-milliseconds mymaster-$master_index 5000
+            sentinel failover-timeout mymaster-$master_index 60000
+            sentinel parallel-syncs mymaster-$master_index 1
+            sentinel auth-pass mymaster-$master_index $REDIS_PASSWORD
+            EOF
+
+            done
+
+            # Create the sentinel configuration file
+            cat <<EOF > /etc/redis/sentinel.conf
+            port $REDIS_SENTINEL_PORT
+            sentinel resolve-hostnames yes
+            sentinel announce-hostnames yes
+            $(cat /tmp/master)
+            EOF
+
+            # Output the final configuration for verification
+            echo "Sentinel configuration:"
+            cat /etc/redis/sentinel.conf
+        env:
+        - name: REDIS_PORT
+          value: "{{ .Values.redisPort }}"
+        - name: REDIS_SENTINEL_PORT
+          value: "{{ .Values.redisSentinelPort }}"
+        - name: NUM_REDIS_SENTINEL_REPLICAS
+          value: "{{ .Values.numRedisSentinelReplicas }}"
+        - name: NUM_REDIS_MASTER_REPLICAS
+          value: "{{ .Values.numRedisMasterReplicas }}"
+        - name: NUM_REDIS_REPLICAS_TOTAL
+          value: "{{ .Values.numRedisReplicasTotal }}"
+        - name: NUM_REDIS_SLAVES_PER_MASTER
+          value: "{{ .Values.numRedisSlavesPerMaster }}"
+        - name: REDIS_PASSWORD
+          value: "{{ .Values.redisPassword }}"
+        volumeMounts:
+        - name: writable-config
+          mountPath: /etc/redis/
+      containers:
+      - name: redis-sentinel
+        image: redis:7.0.10-alpine
+        command: ["redis-sentinel"]
+        args: ["/etc/redis/sentinel.conf"]
+        ports:
+        - containerPort: {{ .Values.redisSentinelPort }}
+          name: sentinel
+        volumeMounts:
+        - name: writable-config
+          mountPath: /etc/redis/
+        - name: sentinel-data
+          mountPath: /data
+      volumes:
+      - name: writable-config
+        emptyDir: {}
+  volumeClaimTemplates:
+  - metadata:
+      name: sentinel-data
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      storageClassName: "gp2"
+      resources:
+        requests:
+          storage: {{ .Values.redisSentinelStorageSize }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis-userstate-sentinel-service
+spec:
+  clusterIP: None
+  selector:
+    app: redis-userstate-sentinel
+  ports:
+  - port: {{ .Values.redisSentinelPort }}
+    targetPort: {{ .Values.redisSentinelPort }}
+    name: sentinel

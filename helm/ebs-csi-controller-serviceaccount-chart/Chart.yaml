@@ -1,0 +1,4 @@
+apiVersion: v2
+name: ebs-csi-controller-serviceaccount-chart
+version: 1.0.0
+description: A Helm chart for AWS Load Balancer Controller Service Account

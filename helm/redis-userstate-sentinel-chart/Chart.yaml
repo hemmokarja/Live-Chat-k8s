@@ -1,0 +1,4 @@
+apiVersion: v2
+name: redis-userstate-sentinel-chart
+version: 1.0.0
+description: A Helm chart for Sentinels of the Redis Cluster used for maintaining user state

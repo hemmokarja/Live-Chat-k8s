@@ -1,21 +1,21 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: redis-deployment
+  name: redis-broker-deployment
   labels:
-    app: redis
+    app: redis-broker
 spec:
-  replicas: {{ .Values.numRedisReplicas }}
+  replicas: 1
   selector:
     matchLabels:
-      app: redis
+      app: redis-broker
   template:
     metadata:
       labels:
-        app: redis
+        app: redis-broker
     spec:
       containers:
-        - name: redis
+        - name: redis-broker
           image: redis:latest
           ports:
             - containerPort: {{ .Values.redisPort }}
@@ -23,13 +23,13 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: redis-service
+  name: redis-broker-service
   labels:
-    app: redis
+    app: redis-broker
 spec:
   type: ClusterIP
   selector:
-    app: redis
+    app: redis-broker
   ports:
     - protocol: TCP
       port: {{ .Values.redisPort }}
