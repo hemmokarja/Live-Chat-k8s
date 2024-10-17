@@ -97,7 +97,7 @@ spec:
           mountPath: /etc/redis/
       containers:
       - name: redis
-        image: redis:latest  # 7.0.10-alpine
+        image: "redis:{{ .Values.redisVersion }}"
         command: ["redis-server"]
         args: ["/etc/redis/redis.conf"]
         ports:
