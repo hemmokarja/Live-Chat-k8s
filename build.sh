@@ -22,6 +22,16 @@ VPC_ID=""
 AWS_LB_CONTROLLER_ROLE_ARN=""
 ACM_CERTIFICATE_ARN=""
 ALB_DNS=""
+NUM_REDIS_REPLICAS_TOTAL=""
+
+
+compute_num_redis_replicas_total() {
+    if [[ $NUM_REDIS_MASTER_REPLICAS -lt 3 ]]; then
+        echo "NUM_REDIS_MASTER_REPLICAS must be at least 3. Exiting."
+        exit 1
+    fi  
+    NUM_REDIS_REPLICAS_TOTAL=$(( $NUM_REDIS_MASTER_REPLICAS * ( $NUM_REDIS_SLAVES_PER_MASTER + 1 ) ))
+}
 
 
 encode_flask_secret() {
@@ -158,9 +168,9 @@ install_metrics_server() {
 }
 
 
-install_load_balancer_controller() {
+install_load_balancer_controller_serviceaccount() {
     echo "Installing AWS Load Balancer Controller Service Account..."
-    helm upgrade -i service-account-release "$HELM_DIR/service-account-chart" \
+    helm upgrade -i aws-lb-controller-serviceaccount-release "$HELM_DIR/aws-lb-controller-serviceaccount-chart" \
         --set "awsLoadBalancerControllerRoleArn=$AWS_LB_CONTROLLER_ROLE_ARN"
     sleep 10
     
@@ -172,7 +182,7 @@ install_load_balancer_controller() {
         -n kube-system \
         --set "clusterName=$CLUSTER_NAME" \
         --set serviceAccount.create=false \
-        --set serviceAccount.name=aws-load-balancer-controller-service-account \
+        --set serviceAccount.name=aws-load-balancer-controller-serviceaccount \
         --set "region=$REGION" \
         --set vpcId=$VPC_ID \
         --set "image.repository=602401143452.dkr.ecr.$REGION.amazonaws.com/amazon/aws-load-balancer-controller" \
@@ -180,7 +190,7 @@ install_load_balancer_controller() {
 
     echo "Waiting for AWS Load Balancer Controller pods to be ready..."
     kubectl wait --for=condition=Ready pods -l app.kubernetes.io/name=aws-load-balancer-controller \
-        -n kube-system --timeout=4m
+        -n kube-system --timeout=5m
 
     sleep 10  # for ensuring the aws-load-balancer-webhook-service webhook endpoint is ready   
 }
@@ -202,8 +212,10 @@ get_alb_dns() {
     local sleep_interval=5
 
     for ((i=1; i<=retries; i++)); do
-        ALB_DNS=$(kubectl get ingress live-chat-ingress -o \
-            jsonpath="{.status.loadBalancer.ingress[0].hostname}")
+        ALB_DNS=$(
+            kubectl get ingress live-chat-ingress -o \
+            jsonpath="{.status.loadBalancer.ingress[0].hostname}"
+        )
 
         if [[ -n "$ALB_DNS" ]]; then
             echo "ALB DNS retrieved: $ALB_DNS"
@@ -219,6 +231,86 @@ get_alb_dns() {
 }
 
 
+install_ebs_csi_controller_serviceaccount() {
+    helm upgrade -i ebs-csi-controller-serviceaccount-release "./helm/ebs-csi-controller-serviceaccount-chart" \
+        --set "ebsCsiDriverRoleArn=$AWS_LB_CONTROLLER_ROLE_ARN"
+}
+
+
+install_redis_userstate_cluster() {
+    echo "Installing Redis cluster for user state..."
+
+    helm upgrade -i redis-userstate-release "./helm/redis-userstate-chart" \
+        --set "redisVersion=$REDIS_VERSION" \
+        --set "redisPort=$REDIS_PORT" \
+        --set "redisClusterBusPort=$REDIS_CLUSTER_BUS_PORT" \
+        --set "numRedisReplicasTotal=$NUM_REDIS_REPLICAS_TOTAL" \
+        --set "redisStorageSize=$REDIS_STORAGE_SIZE" \
+        --set "redisPassword=$REDIS_PASSWORD"
+    sleep 5
+
+    echo "Waiting for all pods to start..."
+    while true; do
+        local ready_pods=$(
+            kubectl get pods -l app=redis-userstate \
+            -o jsonpath='{.items[*].status.containerStatuses[?(@.name=="redis")].ready}' \
+            | grep -o true | wc -l | xargs
+        )
+        if [ "$ready_pods" -eq "$NUM_REDIS_REPLICAS_TOTAL" ]; then
+            echo "All $NUM_REDIS_REPLICAS_TOTAL Redis pods are ready!"
+            break
+        else
+            echo "$ready_pods/$NUM_REDIS_REPLICAS_TOTAL pods are ready..."
+            sleep 5
+        fi
+    done
+
+    local cluster_status=$(
+        kubectl exec redis-0 -- redis-cli -a "$REDIS_PASSWORD" cluster info \
+        | grep cluster_state
+    )
+    if [[ "$cluster_status" == *"cluster_state:ok"* ]]; then
+        echo "Redis Cluster is already set up. Skipping cluster creation."
+        return 0
+    fi
+
+    # start cluster
+    local redis_nodes=""
+    for i in $(seq 0 $(($NUM_REDIS_REPLICAS_TOTAL - 1))); do
+        local node="redis-$i.redis-userstate-service.default.svc.cluster.local:$REDIS_PORT"
+        if [ -z "$redis_nodes" ]; then
+            redis_nodes="$node"
+        else
+            redis_nodes="$redis_nodes $node"
+        fi
+    done
+    echo "Starting cluster for nodes: $redis_nodes"
+    
+    kubectl exec redis-0 -c redis -- redis-cli \
+        -a "$REDIS_PASSWORD" \
+        --cluster create $redis_nodes \
+        --cluster-replicas $NUM_REDIS_SLAVES_PER_MASTER \
+        --cluster-yes
+    
+    echo "Redis cluster for user state installed"
+    sleep 5
+}
+
+
+install_redis_messagebroker() {
+    echo "Installing Redis deployment for message brokering..."
+    helm upgrade -i redis-messagebroker-release "$HELM_DIR/redis-messagebroker-chart" \
+        --set "redisPort=$REDIS_PORT" \
+        --set "redisVersion=$REDIS_VERSION"
+    
+    echo "Waiting for the pod to be ready..."
+    kubectl wait --for=condition=ready pod -l app=redis-messagebroker --timeout=5m
+
+    echo "Redis deployment for message brokering installed"
+    sleep 5
+}
+
+
 install_app() {
     echo "Installing application deployments..."
     helm upgrade -i app-release "$HELM_DIR/app-chart" \
@@ -227,25 +319,31 @@ install_app() {
         --set "backendEcrRepositoryName=$BACKEND_REPOSITORY_NAME" \
         --set "uiEcrRepositoryName=$UI_REPOSITORY_NAME" \
         --set "backendServicePort=$BACKEND_MODULE_PORT" \
-        --set "uiServicePort=$UI_MODULE_PORT" \
-        --set "redisPort=$REDIS_PORT" \
-        --set "numRedisReplicas=$NUM_REDIS_REPLICAS" \
         --set "backendMinReplicas=$BACKEND_MIN_REPLICAS" \
         --set "backendMaxReplicas=$BACKEND_MAX_REPLICAS" \
-        --set "uiMinReplicas=$UI_MIN_REPLICAS" \
-        --set "uiMaxReplicas=$UI_MAX_REPLICAS" \
         --set "backendTargetCpuUtilization=$BACKEND_TARGET_CPU_UTILIZATION_PCT" \
-        --set "uiTargetCpuUtilization=$UI_TARGET_CPU_UTILIZATION_PCT" \
         --set "backendMemoryRequest=$BACKEND_MEMORY_REQUEST" \
         --set "backendMemoryLimit=$BACKEND_MEMORY_LIMIT" \
         --set "backendCpuRequest=$BACKEND_CPU_REQUEST" \
         --set "backendCpuLimit=$BACKEND_CPU_LIMIT" \
+        --set "uiServicePort=$UI_MODULE_PORT" \
+        --set "uiMinReplicas=$UI_MIN_REPLICAS" \
+        --set "uiMaxReplicas=$UI_MAX_REPLICAS" \
+        --set "uiTargetCpuUtilization=$UI_TARGET_CPU_UTILIZATION_PCT" \
         --set "uiMemoryRequest=$UI_MEMORY_REQUEST" \
         --set "uiMemoryLimit=$UI_MEMORY_LIMIT" \
         --set "uiCpuRequest=$UI_CPU_REQUEST" \
         --set "uiCpuLimit=$UI_CPU_LIMIT" \
+        --set "numRedisReplicasTotal=$NUM_REDIS_REPLICAS_TOTAL" \
+        --set "redisPort=$REDIS_PORT" \
+        --set "redisPassword=$REDIS_PASSWORD" \
         --set "albDns=$ALB_DNS" \
         --set "flaskSecretKey=$BASE64_SECRET_KEY"
+    
+    echo "Waiting for the pods to be ready (this may take a while)..."
+    kubectl wait --for=condition=ready pod -l app=backend --timeout=5m
+    kubectl wait --for=condition=ready pod -l app=ui --timeout=5m
+
     echo "Application deployments installed"
 }
 
@@ -253,6 +351,7 @@ install_app() {
 check_commands
 check_aws_env
 check_config_variables
+compute_num_redis_replicas_total
 encode_flask_secret
 get_public_ip
 get_aws_account_id
@@ -261,9 +360,9 @@ init_terraform
 apply_terraform
 update_kubectl_context
 install_metrics_server
-install_load_balancer_controller
+install_load_balancer_controller_serviceaccount
 install_ingress
-get_alb_dns``
+get_alb_dns
 
 bash "$PUSH_IMAGE_SCRIPT" \
     "backend_module" \
@@ -279,6 +378,9 @@ bash "$PUSH_IMAGE_SCRIPT" \
     "$UI_DIR" \
     "$REGION"
 
+install_ebs_csi_controller_serviceaccount
+install_redis_userstate_cluster
+install_redis_messagebroker
 install_app
 
 echo "Application launched successfully!"

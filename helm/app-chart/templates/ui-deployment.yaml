@@ -32,6 +32,12 @@ spec:
               value: "http://backend-service:{{ .Values.backendServicePort }}"
             - name: CONTAINER_PORT
               value: "{{ .Values.uiServicePort }}"
+          readinessProbe:
+            tcpSocket:
+              port: {{ .Values.uiServicePort }}
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            failureThreshold: 1000
           resources:
             requests:
               memory: "{{ .Values.uiMemoryRequest }}"

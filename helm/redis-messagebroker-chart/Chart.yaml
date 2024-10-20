@@ -1,0 +1,4 @@
+apiVersion: v2
+name: redis-messagebroker-chart
+version: 1.0.0
+description: A Helm chart for Redis deployment used for message brokering

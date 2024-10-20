@@ -10,7 +10,7 @@ data "aws_iam_policy_document" "aws_lb_controller_assume_role_policy" {
     condition {
       test     = "StringEquals"
       variable = "${replace(module.eks.cluster_oidc_issuer_url, "https://", "")}:sub"
-      values   = ["system:serviceaccount:kube-system:aws-load-balancer-controller-service-account"]
+      values   = ["system:serviceaccount:kube-system:aws-load-balancer-controller-serviceaccount"]
     }
   }
 }

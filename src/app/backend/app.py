@@ -8,9 +8,10 @@ import os
 import logging
 import sys
 
-from chat_manager import RedisChatManager
-from flask import Flask, jsonify, request
-from flask_socketio import SocketIO, emit, join_room, leave_room
+from flask import jsonify, request
+from flask_socketio import emit, join_room, leave_room
+
+import util
 
 logging.basicConfig(
     level=logging.INFO,
@@ -19,22 +20,9 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-app = Flask(__name__)
-app.config["ENV"] = os.environ["FLASK_ENV"]
-app.config["DEBUG"] = os.environ["FLASK_DEBUG"]
-app.config["SECRET_KEY"] = os.environ["FLASK_SECRET_KEY"]
-
-alb_dns = os.environ["ALB_DNS"]
-redis_host = os.environ["REDIS_HOST"]
-redis_port = os.environ["REDIS_PORT"]
-socketio = SocketIO(
-    app,
-    cors_allowed_origins=[f"https://{alb_dns}"],
-    message_queue=f"redis://{redis_host}:{redis_port}/0",
-    logger=True,
-    engineio_logger=True
-)
-manager = RedisChatManager(host=redis_host, port=redis_port, db=1)
+app = util.init_app()
+socketio = util.init_socket(app)
+manager = util.init_chat_manager()
 
 
 @app.route("/api/")

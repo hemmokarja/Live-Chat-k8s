@@ -1,0 +1,113 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: redis
+spec:
+  serviceName: redis-userstate-service
+  replicas: {{ .Values.numRedisReplicasTotal }}
+  selector:
+    matchLabels:
+      app: redis-userstate
+  template:
+    metadata:
+      labels:
+        app: redis-userstate
+    spec:
+      initContainers:
+      - name: bootstrap-redis
+        image: "redis:{{ .Values.redisVersion }}"
+        command: [ "sh", "-c" ]
+        args:
+          - |
+            #!/bin/bash
+
+            cp /tmp/redis/redis.conf /etc/redis/redis.conf
+
+            echo "Setting up redis.conf for pod $POD_NAME"
+
+            echo "
+            port $REDIS_PORT
+            bind 0.0.0.0
+            cluster-enabled yes
+            cluster-config-file nodes.conf
+            cluster-node-timeout 5000
+            appendonly yes
+            replica-read-only yes
+            cluster-preferred-endpoint-type hostname
+            cluster-announce-port $REDIS_PORT
+            cluster-announce-bus-port $REDIS_CLUSTER_BUS_PORT
+            cluster-announce-hostname \"${POD_NAME}.redis-userstate-service.default.svc.cluster.local\"
+            protected-mode no
+            masterauth $REDIS_PASSWORD
+            requirepass $REDIS_PASSWORD
+            " >> /etc/redis/redis.conf
+        env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: REDIS_PORT
+          value: "{{ .Values.redisPort }}"
+        - name: REDIS_CLUSTER_BUS_PORT
+          value: "{{ .Values.redisClusterBusPort }}"
+        - name: REDIS_PASSWORD
+          value: "{{ .Values.redisPassword }}"
+        volumeMounts:
+        - name: redis-userstate-config
+          mountPath: /tmp/redis/
+        - name: writable-config
+          mountPath: /etc/redis/
+      containers:
+      - name: redis
+        image: "redis:{{ .Values.redisVersion }}"
+        command: ["redis-server"]
+        args: ["/etc/redis/redis.conf"]
+        ports:
+        - containerPort: {{ .Values.redisPort }}
+          name: redis
+        volumeMounts:
+        - name: userstate-data
+          mountPath: /data
+        - name: writable-config
+          mountPath: /etc/redis/
+        readinessProbe:
+          tcpSocket:
+            port: {{ .Values.redisPort }}
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          timeoutSeconds: 5
+          failureThreshold: 1000
+      volumes:
+      - name: redis-userstate-config
+        configMap:
+          name: redis-userstate-config
+      - name: writable-config
+        emptyDir: {}
+  volumeClaimTemplates:
+  - metadata:
+      name: userstate-data
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      storageClassName: "gp2"
+      resources:
+        requests:
+          storage: {{ .Values.redisStorageSize }}
+  persistentVolumeClaimRetentionPolicy:
+    whenDeleted: Delete
+    whenScaled: Retain
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis-userstate-service
+spec:
+  clusterIP: None  # this makes it a headless service
+  selector:
+    app: redis-userstate
+  ports:
+  - port: {{ .Values.redisPort }}
+    targetPort: {{ .Values.redisPort }}
+    name: redis
+  - port: {{ .Values.redisClusterBusPort }}
+    targetPort: {{ .Values.redisClusterBusPort }}
+    name: redis-bus

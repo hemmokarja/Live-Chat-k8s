@@ -9,3 +9,7 @@ output "aws_lb_controller_role_arn" {
 output "acm_certificate_arn" {
   value = aws_acm_certificate.self_signed_cert.arn
 }
+
+output "ebs_csi_driver_role_arn" {
+  value = aws_iam_role.ebs_csi_driver_role.arn
+}

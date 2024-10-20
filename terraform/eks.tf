@@ -47,6 +47,7 @@ module "eks" {
         "EKSWorkerNodePolicy"          = "arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy"
         "EC2ContainerRegistryReadOnly" = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
         "EKSCNIPolicy"                 = "arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy"
+        "AmazonEBSCSIDriverPolicy"     = "arn:aws:iam::aws:policy/service-role/AmazonEBSCSIDriverPolicy"
       }
     }
   }
@@ -56,6 +57,10 @@ module "eks" {
   iam_role_additional_policies = {
     "EKSClusterPolicy" = "arn:aws:iam::aws:policy/AmazonEKSClusterPolicy"
     "EKSServicePolicy" = "arn:aws:iam::aws:policy/AmazonEKSServicePolicy"
+  }
+
+  cluster_addons = {
+    aws-ebs-csi-driver = { most_recent = true }
   }
 
   enable_irsa = true # for k8s aws load balancer controller service account

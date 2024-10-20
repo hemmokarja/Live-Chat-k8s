@@ -14,15 +14,17 @@ Please keep in mind that this project is intended as a personal project, primari
 - **Scalable Architecture**: Designed to handle increasing loads with ease.
   - **Modular Architecture**: The backend (handling WebSocket traffic and user state) is separate from the UI module (serving web pages), enabling granular scalability.
   - **Autoscaling**: Both cluster and horizontal pod autoscaling are implemented to accommodate virtually unlimited users, scaling up and down dynamically depending on demand.
-- **Redis Integration**: Redis is used as a message broker between backend pods and as an in-memory database to manage user state efficiently.  
-  *Note: In this intermediate version, the app supports only a single Redis replica (as the PUB/SUB mechanism cannot be directly scaled), which limits Redis scalability. This will be addressed in future versions to enable full scaling alongside the rest of the app.*
+- **Redis User State Management**: User state is managed by a Redis Cluster, providing high availability and failover capabilities to ensure resilient and reliable state management across the app.
+- **Redis Message Brokering**: Redis is used for message brokering between backend pods using its PUB/SUB mechanism.
+  - *Note: In this intermediate version, the app supports only a single Redis PUB/SUB message broker replica, which limits scalability. This will be addressed in future versions to enable full scaling alongside the rest of the app.*
 
 ## 🛠️ Built With
 
 - **Backend**: Python, Flask, Flask-SocketIO
 - **Frontend**: JavaScript, HTML, CSS
 - **Infrastructure**: AWS Elastic Kubernetes Service (EKS), Helm for Kubernetes deployment, Terraform for resource provisioning
-- **Message Broker & Cache**: Redis
+- **In-memory Database for User State Management**: Redis Cluster
+- **Message Broker**: Redis
 
 ## 📝 Requirements
 
@@ -36,7 +38,7 @@ Before you can deploy the application, make sure you have the following availabl
   - **Terraform** (>= 1.3.2.)
   - **Docker**
   - **Helm**
-  - **Kubectl** (the kubectl version should be within one minor version of the Kubernetes version used by EKS (i.e., either one version higher or lower). By default, the app is configured to use Kubernetes 1.31.)
+  - **Kubectl** (the kubectl version should be within one minor version of the Kubernetes version used by EKS, i.e., either one version higher or lower. By default, the app is configured to use Kubernetes 1.31.)
   - **OpenSSL**
 
 ## 🚀 Getting Started
@@ -46,10 +48,11 @@ To deploy the chat application, follow these steps:
 1. **Review Configuration**: 
    - Open `config.sh` to customize settings as needed.
    
-2. **Set Flask Secret**:
-   - Make sure to export the Flask secret key (you can set any value you like!):
+2. **Set Secrets**:
+   - Make sure to export the Flask secret key and Redis password (you can set any values you like!):
      ```bash
      export FLASK_SECRET_KEY=<your-secret-key>
+     export REDIS_PASSWORD=<your-password>
      ```
 
 3. **Build Resources**:
