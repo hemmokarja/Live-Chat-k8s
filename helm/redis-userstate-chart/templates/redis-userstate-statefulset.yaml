@@ -92,6 +92,9 @@ spec:
       resources:
         requests:
           storage: {{ .Values.redisStorageSize }}
+  persistentVolumeClaimRetentionPolicy:
+    whenDeleted: Delete
+    whenScaled: Retain
 ---
 apiVersion: v1
 kind: Service
