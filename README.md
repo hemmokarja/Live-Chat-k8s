@@ -48,10 +48,11 @@ To deploy the chat application, follow these steps:
 1. **Review Configuration**: 
    - Open `config.sh` to customize settings as needed.
    
-2. **Set Flask Secret**:
-   - Make sure to export the Flask secret key (you can set any value you like!):
+2. **Set Secrets**:
+   - Make sure to export the Flask secret key and Redis password (you can set any values you like!):
      ```bash
      export FLASK_SECRET_KEY=<your-secret-key>
+     export REDIS_PASSWORD=<your-password>
      ```
 
 3. **Build Resources**:
