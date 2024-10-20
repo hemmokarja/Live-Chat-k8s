@@ -28,17 +28,20 @@ spec:
                 secretKeyRef:
                   name: flask-secret
                   key: secret_key
-
-            - name: REDIS_BROKER_HOST
-              value: "redis-broker-service"
-            - name: REDIS_BROKER_PORT
+            - name: NUM_REDIS_REPLICAS_TOTAL
+              value: "{{ .Values.numRedisReplicasTotal }}"
+            - name: REDIS_PORT
               value: "{{ .Values.redisPort }}"
-
-            - name: REDIS_USERSTATE_HOST
-              value: "<SET HOST FOR USERSTATE>"
-            - name: REDIS_USERSTATE_PORT
-              value: "{{ .Values.redisPort }}"
-
+            - name: REDIS_MESSAGEBROKER_SERVICE_NAME
+              value: "redis-messagebroker-service"
+            - name: REDIS_USERSTATE_SERVICE_NAME
+              value: "redis-userstate-service"
+            - name: REDIS_USERSTATE_POD_NAME_PREFIX
+              value: "redis"
+            - name: REDIS_USERSTATE_NAMESPACE
+              value: "default"
+            - name: REDIS_PASSWORD
+              value: "{{ .Values.redisPassword }}"
             - name: ALB_DNS
               value: "{{ .Values.albDns }}"
             - name: CONTAINER_PORT
@@ -50,6 +53,12 @@ spec:
             limits:
               memory: "{{ .Values.backendMemoryLimit }}"
               cpu: "{{ .Values.backendCpuLimit }}"
+          readinessProbe:
+            tcpSocket:
+              port: {{ .Values.backendServicePort }}
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            failureThreshold: 1000
 ---
 apiVersion: v1
 kind: Service

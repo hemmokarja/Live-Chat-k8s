@@ -9,15 +9,64 @@ CERT_DIR="./.cert"
 AWS_ACCOUNT_ID=""
 
 
+uninstall_app() {
+    echo "Uninstalling application..."
+    if helm status app-release &> /dev/null; then
+        helm uninstall app-release
+        
+        echo "Application uninstalled"
+    else
+        echo "Release 'app-release' already uninstalled or doesn't exist."
+    fi
+    sleep 5
+}
+
+
+uninstall_redis_messagebroker() {
+    echo "Uninstalling Redis message broker..."
+    if helm status redis-messagebroker-release &> /dev/null; then
+        helm uninstall redis-messagebroker-release
+        echo "Redis message broker uninstalled"
+    else
+        echo "Release 'redis-messagebroker-release' already uninstalled or doesn't exist."
+    fi
+    sleep 5
+}
+
+
+uninstall_redis_userstate_cluster() {
+    echo "Uninstalling Redis user state cluster..."
+    if helm status redis-userstate-release &> /dev/null; then
+        helm uninstall redis-userstate-release
+        echo "Redis user state cluster uninstalled"
+    else
+        echo "Release 'redis-userstate-release' already uninstalled or doesn't exist."
+    fi
+    sleep 5
+}
+
+
+uninstall_ebs_csi_controller_serviceaccount () {
+    echo "Uninstalling EBS CSI Controller Service Account..."
+    if helm status ebs-csi-controller-serviceaccount-release &> /dev/null; then
+        helm uninstall ebs-csi-controller-serviceaccount-release
+        echo "EBS CSI Controller Service Account uninstalled"
+    else
+        echo "Release 'ebs-csi-controller-serviceaccount-release' already uninstalled or doesn't exist."
+    fi
+    sleep 5
+}
+
+
 uninstall_ingress() {
     local retries=60
     local sleep_interval=5
-    
+
     echo "Uninstalling ingress..."
     if helm status ingress-release &> /dev/null; then
         helm uninstall ingress-release
     else
-        echo "Ingress release 'ingress-release' already uninstalled or doesn't exist."
+        echo "Release 'ingress-release' already uninstalled or doesn't exist."
     fi
 
     echo "Waiting for ingress resource to be destroyed..."
@@ -46,28 +95,15 @@ uninstall_load_balancer_controller() {
         helm uninstall aws-load-balancer-controller -n kube-system
         sleep 10
     else
-        echo "Load Balancer Controller release 'aws-load-balancer-controller' already uninstalled" \
-            "or doesn't exist."
+        echo "Release 'aws-load-balancer-controller' already uninstalled or doesn't exist."
     fi
 
     echo "Uninstalling AWS Load Balancer Controller Service Account..."
-    if helm status service-account-release &> /dev/null; then
-        helm uninstall service-account-release
+    if helm status aws-lb-controller-serviceaccount-release &> /dev/null; then
+        helm uninstall aws-lb-controller-serviceaccount-release
         sleep 10
     else
-        echo "Service account release 'service-account-release' already uninstalled or doesn't exist."
-    fi
-}
-
-
-uninstall_app() {
-    echo "Uninstalling application..."
-    if helm status app-release &> /dev/null; then
-        helm uninstall app-release
-        
-        echo "Application uninstalled"
-    else
-        echo "App release 'app-release' already uninstalled or doesn't exist."
+        echo "Release 'aws-lb-controller-serviceaccount-release' already uninstalled or doesn't exist."
     fi
 }
 
@@ -87,6 +123,7 @@ uninstall_metrics_server() {
         echo "Deployment still exists, waiting..."
         sleep 5
     done
+    sleep 5
 }
 
 
@@ -132,9 +169,12 @@ check_aws_env
 check_commands
 check_config_variables
 get_aws_account_id
+uninstall_app
+uninstall_redis_messagebroker
+uninstall_redis_userstate_cluster
+uninstall_ebs_csi_controller_serviceaccount
 uninstall_ingress
 uninstall_load_balancer_controller
-uninstall_app
 uninstall_metrics_server
 destroy_terraform
 delete_kube_context

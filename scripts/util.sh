@@ -17,28 +17,34 @@ check_config_variables() {
         "USERNAME"
         "REGION"
         "EKS_KUBERNETES_VERSION"
+        "METRICS_SERVER_VERSION"
         "EKS_INSTANCE_TYPE"
         "EKS_DESIRED_NODES"
         "EKS_MIN_NODES"
         "EKS_MAX_NODES"
-        "NUM_REDIS_REPLICAS"
+        "REDIS_VERSION"
+        "NUM_REDIS_MASTER_REPLICAS"
+        "NUM_REDIS_SLAVES_PER_MASTER"
+        "REDIS_STORAGE_SIZE"
+        "REDIS_PORT"
+        "REDIS_CLUSTER_BUS_PORT"
         "BACKEND_MIN_REPLICAS"
         "BACKEND_MAX_REPLICAS"
         "BACKEND_TARGET_CPU_UTILIZATION_PCT"
-        "UI_MIN_REPLICAS"
-        "UI_MAX_REPLICAS"
-        "UI_TARGET_CPU_UTILIZATION_PCT"
         "BACKEND_MEMORY_REQUEST"
         "BACKEND_MEMORY_LIMIT"
         "BACKEND_CPU_REQUEST"
         "BACKEND_CPU_LIMIT"
+        "BACKEND_MODULE_PORT"
+        "UI_MIN_REPLICAS"
+        "UI_MAX_REPLICAS"
+        "UI_TARGET_CPU_UTILIZATION_PCT"
         "UI_MEMORY_REQUEST"
         "UI_MEMORY_LIMIT"
         "UI_CPU_REQUEST"
         "UI_CPU_LIMIT"
-        "BACKEND_MODULE_PORT"
         "UI_MODULE_PORT"
-        "REDIS_PORT"
+        "REDIS_PASSWORD"
     )
 
     local all_set=true
@@ -54,8 +60,8 @@ check_config_variables() {
         echo "All required configuration variables are set"
         return 0
     else
-        echo "Some configuration variables are missing! Please set them in config.sh \
-            before proceeding. Exiting."
+        echo "Some configuration variables are missing! Please set them in config.sh" \
+            "before proceeding. Exiting."
         return 1
     fi
 }
