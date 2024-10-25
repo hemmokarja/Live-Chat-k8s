@@ -16,12 +16,14 @@ BACKEND_REPOSITORY_NAME="$PROJECT_LOWER/backend_module"
 UI_REPOSITORY_NAME="$PROJECT_LOWER/ui_module"
 
 BASE64_SECRET_KEY=""
+BASE64_ERLANG_COOKIE=""
 PUBLIC_IP=""
 AWS_ACCOUNT_ID=""
 VPC_ID=""
 AWS_LB_CONTROLLER_ROLE_ARN=""
 ACM_CERTIFICATE_ARN=""
 ALB_DNS=""
+NLB_DNS=""
 NUM_REDIS_REPLICAS_TOTAL=""
 
 
@@ -43,6 +45,18 @@ encode_flask_secret() {
     fi
     
     BASE64_SECRET_KEY=$(echo -n "$FLASK_SECRET_KEY" | base64)
+}
+
+
+encode_rabbit_erlang_cookie() {
+    echo "Base64-encoding RabbitMQ Erlang cookie..."
+    
+    if [[ -z "$RABBIT_ERLANG_COOKIE" ]]; then
+        echo "RABBIT_ERLANG_COOKIE must be set as environment variable. Exiting"
+        exit 1
+    fi
+    
+    BASE64_ERLANG_COOKIE=$(echo -n "$RABBIT_ERLANG_COOKIE" | base64)
 }
 
 
@@ -231,6 +245,68 @@ get_alb_dns() {
 }
 
 
+install_rabbitmq_serviceaccount() {
+    helm upgrade -i rabbitmq-serviceaccount-release "$HELM_DIR/rabbitmq-serviceaccount-chart"
+    sleep 5
+}
+
+
+install_rabbitmq_messagebroker_cluster() {
+    echo "Installing RabbitMQ cluster for message brokering..."
+    
+    helm upgrade -i rabbitmq-messagebroker-release "$HELM_DIR/rabbitmq-messagebroker-chart" \
+        --set "rabbitVersion=$RABBIT_VERSION" \
+        --set "rabbitPort=$RABBIT_PORT" \
+        --set "rabbitDiscoveryPort=$RABBIT_DISCOVERY_PORT" \
+        --set "numRabbitReplicas=$NUM_RABBIT_REPLICAS" \
+        --set "rabbitErlangCookie=$BASE64_ERLANG_COOKIE"
+
+    echo "Waiting for all pods to start..."
+    while true; do
+        local ready_pods=$(
+            kubectl get pods -l app=rabbitmq-broker \
+            -o jsonpath='{.items[*].status.containerStatuses[?(@.name=="rabbitmq")].ready}' \
+            | grep -o true | wc -l | xargs
+        )
+        if [ "$ready_pods" -eq "$NUM_RABBIT_REPLICAS" ]; then
+            echo "All $NUM_RABBIT_REPLICAS RabbitMQ pods are ready!"
+            break
+        else
+            echo "$ready_pods/$NUM_RABBIT_REPLICAS pods are ready..."
+            sleep 5
+        fi
+    done
+
+    echo "RabbitMQ cluster for message brokering installed"
+}
+
+
+get_nlb_dns() {
+    echo "Retrieving RabbitMQ NLB DNS..."
+
+    local retries=30
+    local sleep_interval=5
+
+    for ((i=1; i<=retries; i++)); do
+        NLB_DNS=$(
+            kubectl get svc rabbitmq-nlb -o \
+            jsonpath="{.status.loadBalancer.ingress[0].hostname}"
+        )
+
+        if [[ -n "$NLB_DNS" ]]; then
+            echo "RabbitMQ NLB DNS retrieved: $NLB_DNS"
+            return 0
+        fi
+
+        echo "RabbitMQ NLB DNS not available yet, retrying in $sleep_interval seconds... ($i/$retries)"
+        sleep $sleep_interval
+    done
+
+    echo "Failed to retrieve RabbitMQ NLB DNS after $retries attempts. Exiting."
+    exit 1
+}
+
+
 install_ebs_csi_controller_serviceaccount() {
     helm upgrade -i ebs-csi-controller-serviceaccount-release "./helm/ebs-csi-controller-serviceaccount-chart" \
         --set "ebsCsiDriverRoleArn=$AWS_LB_CONTROLLER_ROLE_ARN"
@@ -297,20 +373,6 @@ install_redis_userstate_cluster() {
 }
 
 
-install_redis_messagebroker() {
-    echo "Installing Redis deployment for message brokering..."
-    helm upgrade -i redis-messagebroker-release "$HELM_DIR/redis-messagebroker-chart" \
-        --set "redisPort=$REDIS_PORT" \
-        --set "redisVersion=$REDIS_VERSION"
-    
-    echo "Waiting for the pod to be ready..."
-    kubectl wait --for=condition=ready pod -l app=redis-messagebroker --timeout=5m
-
-    echo "Redis deployment for message brokering installed"
-    sleep 5
-}
-
-
 install_app() {
     echo "Installing application deployments..."
     helm upgrade -i app-release "$HELM_DIR/app-chart" \
@@ -337,6 +399,10 @@ install_app() {
         --set "numRedisReplicasTotal=$NUM_REDIS_REPLICAS_TOTAL" \
         --set "redisPort=$REDIS_PORT" \
         --set "redisPassword=$REDIS_PASSWORD" \
+        --set "rabbitPort=$RABBIT_PORT" \
+        --set "rabbitUsername=$RABBIT_USERNAME" \
+        --set "rabbitPassword=$RABBIT_PASSWORD" \
+        --set "rabbitNlbDns=$NLB_DNS" \
         --set "albDns=$ALB_DNS" \
         --set "flaskSecretKey=$BASE64_SECRET_KEY"
     
@@ -351,18 +417,30 @@ install_app() {
 check_commands
 check_aws_env
 check_config_variables
+
 compute_num_redis_replicas_total
 encode_flask_secret
+encode_rabbit_erlang_cookie
 get_public_ip
 get_aws_account_id
 create_self_signed_ssl_cert
+
 init_terraform
 apply_terraform
 update_kubectl_context
+
 install_metrics_server
+
 install_load_balancer_controller_serviceaccount
 install_ingress
 get_alb_dns
+
+install_rabbitmq_serviceaccount
+install_rabbitmq_messagebroker_cluster
+get_nlb_dns
+
+install_ebs_csi_controller_serviceaccount
+install_redis_userstate_cluster
 
 bash "$PUSH_IMAGE_SCRIPT" \
     "backend_module" \
@@ -378,9 +456,6 @@ bash "$PUSH_IMAGE_SCRIPT" \
     "$UI_DIR" \
     "$REGION"
 
-install_ebs_csi_controller_serviceaccount
-install_redis_userstate_cluster
-install_redis_messagebroker
 install_app
 
 echo "Application launched successfully!"
