@@ -1,0 +1,27 @@
+# When using RabbitMQ's Kubernetes peer discovery plugin (rabbitmq_peer_discovery_k8s), 
+# RabbitMQ pods need permissions to access the Kubernetes API to discover peer nodes
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: rabbitmq-serviceaccount
+---
+kind: Role
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: rabbitmq-role
+rules:
+  - apiGroups: [""]
+    resources: ["endpoints"]
+    verbs: ["get", "list", "watch"]
+---
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: rabbitmq-rolebinding
+subjects:
+  - kind: ServiceAccount
+    name: rabbitmq-serviceaccount
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: rabbitmq-role

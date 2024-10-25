@@ -1,0 +1,4 @@
+apiVersion: v2
+name: rabbitmq-messagebroker-chart
+version: 1.0.0
+description: A Helm chart for RabbitMQ deployment used for message brokering

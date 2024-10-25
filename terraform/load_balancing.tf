@@ -26,30 +26,11 @@ resource "aws_iam_policy" "aws_lb_controller_policy" {
   name = "${var.project}EKSAWSLoadBalancerControllerIAMPolicy"
 
   # https://github.com/kubernetes-sigs/aws-load-balancer-controller/blob/main/docs/install/iam_policy.json
-  policy = file("${path.module}/policies/alb.json")
+  policy = file("${path.module}/policies/lb-controller-policy.json")
 }
 
 
 resource "aws_iam_role_policy_attachment" "aws_lb_controller_policy_attachment" {
   role       = aws_iam_role.aws_lb_controller_role.name
   policy_arn = aws_iam_policy.aws_lb_controller_policy.arn
-}
-
-
-# cert
-locals {
-  cert_dir = "../.cert"
-}
-
-
-resource "aws_acm_certificate" "self_signed_cert" {
-  private_key       = file("${local.cert_dir}/private.key")
-  certificate_body  = file("${local.cert_dir}/certificate.crt")
-  certificate_chain = null
-
-  tags = {
-    Name    = "${var.project}SelfSignedCert"
-    User    = var.username
-    Project = var.project
-  }
 }

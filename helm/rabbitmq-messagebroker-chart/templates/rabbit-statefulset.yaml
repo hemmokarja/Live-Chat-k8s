@@ -1,0 +1,120 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: rabbitmq
+spec:
+  serviceName: rabbitmq-broker-service
+  replicas: {{ .Values.numRabbitReplicas }}
+  selector:
+    matchLabels:
+      app: rabbitmq-broker
+  template:
+    metadata:
+      labels:
+        app: rabbitmq-broker
+    spec:
+      serviceAccountName: rabbitmq-serviceaccount
+      initContainers:
+        - name: bootstrap-rabbitmq
+          image: busybox
+          command:
+            - /bin/sh
+            - -c
+            - |
+              cp /tmp/config/rabbitmq.conf /config/rabbitmq.conf
+              ls -l /config/
+              cp /tmp/config/enabled_plugins /etc/rabbitmq/enabled_plugins
+          volumeMounts:
+            - name: rabbitmq-config
+              mountPath: /tmp/config/
+              readOnly: false
+            - name: writeable-config-file
+              mountPath: /config/
+            - name: writeable-plugins-file
+              mountPath: /etc/rabbitmq/
+      containers:
+        - name: rabbitmq
+          image: "rabbitmq:{{ .Values.rabbitVersion }}"
+          ports:
+            - containerPort: {{ .Values.rabbitDiscoveryPort }}
+              name: discovery
+            - containerPort: {{ .Values.rabbitPort }}
+              name: amqp
+          env:
+            - name: RABBIT_POD_NAME
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.name
+            - name: RABBIT_POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: RABBITMQ_USE_LONGNAME
+              value: "true"
+            - name: K8S_SERVICE_NAME
+              value: rabbitmq-broker-service
+            - name: RABBITMQ_NODENAME
+              value: rabbit@$(RABBIT_POD_NAME).$(K8S_SERVICE_NAME).$(RABBIT_POD_NAMESPACE).svc.cluster.local
+            - name: K8S_HOSTNAME_SUFFIX
+              value: .rabbitmq-broker-service.$(RABBIT_POD_NAMESPACE).svc.cluster.local
+            - name: RABBITMQ_CONFIG_FILE
+              # value: /config/rabbitmq  # TÄÄ OLI ALKUPERÄINEN
+              value: /config/rabbitmq.conf
+            - name: RABBITMQ_ERLANG_COOKIE
+              valueFrom:
+                secretKeyRef:
+                  name: rabbitmq-secret
+                  key: RABBITMQ_ERLANG_COOKIE
+          readinessProbe:
+            tcpSocket:
+              port: {{ .Values.rabbitPort }}
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 5
+            failureThreshold: 1000
+          volumeMounts:
+            - name: broker-data
+              mountPath: /var/lib/rabbitmq
+              readOnly: false
+            - name: writeable-config-file
+              mountPath: /config/
+            - name: writeable-plugins-file
+              mountPath: /etc/rabbitmq/
+      volumes:
+        - name: rabbitmq-config
+          configMap:
+            name: rabbitmq-config
+            defaultMode: 0755
+        - name: writeable-config-file
+          emptyDir: {}
+        - name: writeable-plugins-file
+          emptyDir: {}
+  volumeClaimTemplates:
+    - metadata:
+        name: broker-data
+      spec:
+        accessModes: [ "ReadWriteOnce" ]
+        storageClassName: "gp2"
+        resources:
+          requests:
+            storage: "1Gi"
+  persistentVolumeClaimRetentionPolicy:
+    whenDeleted: Delete
+    whenScaled: Retain
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: rabbitmq-broker-service
+spec:
+  clusterIP: None
+  ports:
+    - port: {{ .Values.rabbitDiscoveryPort }}
+      targetPort: {{ .Values.rabbitDiscoveryPort }}
+      name: discovery
+    - port: {{ .Values.rabbitPort }}
+      targetPort: {{ .Values.rabbitPort }}
+      name: amqp
+  selector:
+    app: rabbitmq-broker

@@ -2,6 +2,7 @@ import os
 
 from flask import Flask
 from flask_socketio import SocketIO
+from socketio import KombuManager
 
 import chat_manager
 from chat_manager import RedisChatManager
@@ -15,14 +16,31 @@ def init_app():
     return app
 
 
+def _get_rabbit_queue_uri(username, password, host, port, vhost="/"):
+    # https://docs.celeryq.dev/projects/kombu/en/latest/userguide/connections.html#urls
+    return f"amqp://{username}:{password}@{host}:{port}/{vhost}"
+
+
 def init_socket(app):
     alb_dns = os.environ["ALB_DNS"]
-    redis_port = os.environ["REDIS_PORT"]
-    redis_messagebroker_service_name = os.environ["REDIS_MESSAGEBROKER_SERVICE_NAME"]
+    rabbit_queue_uri = _get_rabbit_queue_uri(
+        username=os.environ["RABBIT_USERNAME"],
+        password=os.environ["RABBIT_PASSWORD"],
+        host=os.environ["RABBIT_NLB_DNS"],
+        port=os.environ["RABBIT_PORT"]
+    )
+    client_manager = KombuManager(
+        url=rabbit_queue_uri,
+        queue_options={
+            "durable": True,
+            "queue_arguments": {"x-queue-type": "quorum"},
+            "x-quorum-initial-group-size": 3
+        }
+    )
     socketio = SocketIO(
         app,
+        client_manager=client_manager,
         cors_allowed_origins=[f"https://{alb_dns}"],
-        message_queue=f"redis://{redis_messagebroker_service_name}:{redis_port}/0",
         logger=True,
         engineio_logger=True
     )
@@ -32,9 +50,9 @@ def init_socket(app):
 def init_chat_manager():
     startup_nodes = chat_manager.get_startup_nodes(
         num_replicas=int(os.environ["NUM_REDIS_REPLICAS_TOTAL"]),
-        pod_name_prefix=os.environ["REDIS_USERSTATE_POD_NAME_PREFIX"],
-        service_name=os.environ["REDIS_USERSTATE_SERVICE_NAME"],
-        namespace=os.environ["REDIS_USERSTATE_NAMESPACE"],
+        pod_name_prefix=os.environ["REDIS_POD_NAME_PREFIX"],
+        service_name=os.environ["REDIS_SERVICE_NAME"],
+        namespace=os.environ["REDIS_NAMESPACE"],
         port=os.environ["REDIS_PORT"]
     )
     manager = RedisChatManager(

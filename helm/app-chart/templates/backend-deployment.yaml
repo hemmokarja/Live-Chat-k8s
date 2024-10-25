@@ -32,16 +32,22 @@ spec:
               value: "{{ .Values.numRedisReplicasTotal }}"
             - name: REDIS_PORT
               value: "{{ .Values.redisPort }}"
-            - name: REDIS_MESSAGEBROKER_SERVICE_NAME
-              value: "redis-messagebroker-service"
-            - name: REDIS_USERSTATE_SERVICE_NAME
+            - name: REDIS_SERVICE_NAME
               value: "redis-userstate-service"
-            - name: REDIS_USERSTATE_POD_NAME_PREFIX
+            - name: REDIS_POD_NAME_PREFIX
               value: "redis"
-            - name: REDIS_USERSTATE_NAMESPACE
+            - name: REDIS_NAMESPACE
               value: "default"
             - name: REDIS_PASSWORD
               value: "{{ .Values.redisPassword }}"
+            - name: RABBIT_NLB_DNS
+              value: "{{ .Values.rabbitNlbDns }}"
+            - name: RABBIT_PORT
+              value: "{{ .Values.rabbitPort }}"
+            - name: RABBIT_USERNAME
+              value: "{{ .Values.rabbitUsername }}"
+            - name: RABBIT_PASSWORD
+              value: "{{ .Values.rabbitPassword }}"
             - name: ALB_DNS
               value: "{{ .Values.albDns }}"
             - name: CONTAINER_PORT
