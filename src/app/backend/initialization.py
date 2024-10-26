@@ -1,11 +1,15 @@
 import os
 
+import socket
 from flask import Flask
 from flask_socketio import SocketIO
-from socketio import KombuManager
 
 import chat_manager
 from chat_manager import RedisChatManager
+from kombu_manager import CustomKombuManager
+
+_EXCHANGE_NAME = "chatapp_fanout_exchange"
+_QUEUE_NAME_TEMPLATE = "chatapp_queue_{pod_name}"
 
 
 def init_app():
@@ -21,22 +25,39 @@ def _get_rabbit_queue_uri(username, password, host, port, vhost="/"):
     return f"amqp://{username}:{password}@{host}:{port}/{vhost}"
 
 
+def _get_client_manager(rabbit_queue_uri, pod_name, quorum_size):
+    queue_options = {
+        "durable": True,
+        "queue_arguments": {
+            "x-queue-type": "quorum",
+            "x-quorum-initial-group-size": int(quorum_size)
+        }
+    }
+    exchange_options = {
+        "type": "fanout",
+        "durable": True
+    }
+    client_manager = CustomKombuManager(
+        url=rabbit_queue_uri,
+        queue_name=_QUEUE_NAME_TEMPLATE.format(pod_name=pod_name),
+        channel=_EXCHANGE_NAME,
+        queue_options=queue_options,
+        exchange_options=exchange_options,
+    )
+    return client_manager
+
+
 def init_socket(app):
     alb_dns = os.environ["ALB_DNS"]
+    quorum_size = os.environ["RABBIT_QUORUM_SIZE"]
     rabbit_queue_uri = _get_rabbit_queue_uri(
         username=os.environ["RABBIT_USERNAME"],
         password=os.environ["RABBIT_PASSWORD"],
         host=os.environ["RABBIT_NLB_DNS"],
         port=os.environ["RABBIT_PORT"]
     )
-    client_manager = KombuManager(
-        url=rabbit_queue_uri,
-        queue_options={
-            "durable": True,
-            "queue_arguments": {"x-queue-type": "quorum"},
-            "x-quorum-initial-group-size": 3
-        }
-    )
+    pod_name = socket.gethostname()
+    client_manager = _get_client_manager(rabbit_queue_uri, pod_name, quorum_size)
     socketio = SocketIO(
         app,
         client_manager=client_manager,
