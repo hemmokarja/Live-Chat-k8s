@@ -403,6 +403,7 @@ install_app() {
         --set "rabbitUsername=$RABBIT_USERNAME" \
         --set "rabbitPassword=$RABBIT_PASSWORD" \
         --set "rabbitNlbDns=$NLB_DNS" \
+        --set "numRabbitReplicas=$NUM_RABBIT_REPLICAS" \
         --set "albDns=$ALB_DNS" \
         --set "flaskSecretKey=$BASE64_SECRET_KEY"
     
