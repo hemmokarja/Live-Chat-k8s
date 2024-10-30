@@ -16,6 +16,7 @@ spec:
       containers:
         - name: backend
           image: "{{ .Values.awsAccountId }}.dkr.ecr.{{ .Values.region }}.amazonaws.com/{{ .Values.backendEcrRepositoryName }}:latest"
+          imagePullPolicy: Always
           ports:
             - containerPort: {{ .Values.backendServicePort }}
           env:
@@ -48,8 +49,6 @@ spec:
               value: "{{ .Values.rabbitUsername }}"
             - name: RABBIT_PASSWORD
               value: "{{ .Values.rabbitPassword }}"
-            - name: RABBIT_QUORUM_SIZE
-              value: "{{ .Values.numRabbitReplicas }}"
             - name: ALB_DNS
               value: "{{ .Values.albDns }}"
             - name: CONTAINER_PORT

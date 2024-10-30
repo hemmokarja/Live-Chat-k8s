@@ -16,6 +16,7 @@ spec:
       containers:
         - name: ui
           image: "{{ .Values.awsAccountId }}.dkr.ecr.{{ .Values.region }}.amazonaws.com/{{ .Values.uiEcrRepositoryName }}:latest"
+          imagePullPolicy: Always
           ports:
             - containerPort: {{ .Values.uiServicePort }}
           env:
