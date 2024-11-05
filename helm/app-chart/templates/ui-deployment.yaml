@@ -28,7 +28,7 @@ spec:
               valueFrom:
                 secretKeyRef:
                   name: flask-secret
-                  key: secret_key
+                  key: FLASK_SECRET_KEY
             - name: BACKEND_URL
               value: "http://backend-service:{{ .Values.backendServicePort }}"
             - name: CONTAINER_PORT

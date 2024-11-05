@@ -1,7 +1,7 @@
 #!/bin/bash
 set -euo pipefail
 
-source config.sh
+source ./scripts/load_config.sh
 source ./scripts/util.sh
 
 CERT_DIR="./.cert"
@@ -191,7 +191,7 @@ delete_cert_dir() {
 
 check_aws_env
 check_commands
-check_config_variables
+check_configuration_variables
 get_aws_account_id
 
 uninstall_app

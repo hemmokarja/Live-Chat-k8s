@@ -1,6 +1,5 @@
 import os
 
-import socket
 from flask import Flask
 from flask_socketio import SocketIO
 
@@ -40,7 +39,7 @@ def init_socket(app):
     rabbit_queue_uri = _get_rabbit_queue_uri(
         username=os.environ["RABBIT_USERNAME"],
         password=os.environ["RABBIT_PASSWORD"],
-        host=os.environ["RABBIT_NLB_DNS"],
+        host=os.environ["RABBIT_HOST"],
         port=os.environ["RABBIT_PORT"]
     )
     client_manager = _get_client_manager(rabbit_queue_uri)

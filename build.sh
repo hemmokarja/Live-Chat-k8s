@@ -1,7 +1,7 @@
 #!/bin/bash
 set -euo pipefail
 
-source config.sh
+source ./scripts/load_config.sh
 source ./scripts/util.sh
 
 APP_DIR="./src/app"
@@ -15,8 +15,6 @@ PROJECT_LOWER=$(echo "$PROJECT" | tr "[:upper:]" "[:lower:]")
 BACKEND_REPOSITORY_NAME="$PROJECT_LOWER/backend_module"
 UI_REPOSITORY_NAME="$PROJECT_LOWER/ui_module"
 
-BASE64_SECRET_KEY=""
-BASE64_ERLANG_COOKIE=""
 PUBLIC_IP=""
 AWS_ACCOUNT_ID=""
 VPC_ID=""
@@ -33,30 +31,6 @@ compute_num_redis_replicas_total() {
         exit 1
     fi  
     NUM_REDIS_REPLICAS_TOTAL=$(( $NUM_REDIS_MASTER_REPLICAS * ( $NUM_REDIS_SLAVES_PER_MASTER + 1 ) ))
-}
-
-
-encode_flask_secret() {
-    echo "Base64-encoding Flask secret key..."
-    
-    if [[ -z "$FLASK_SECRET_KEY" ]]; then
-        echo "FLASK_SECRET_KEY must be set as environment variable. Exiting"
-        exit 1
-    fi
-    
-    BASE64_SECRET_KEY=$(echo -n "$FLASK_SECRET_KEY" | base64)
-}
-
-
-encode_rabbit_erlang_cookie() {
-    echo "Base64-encoding RabbitMQ Erlang cookie..."
-    
-    if [[ -z "$RABBIT_ERLANG_COOKIE" ]]; then
-        echo "RABBIT_ERLANG_COOKIE must be set as environment variable. Exiting"
-        exit 1
-    fi
-    
-    BASE64_ERLANG_COOKIE=$(echo -n "$RABBIT_ERLANG_COOKIE" | base64)
 }
 
 
@@ -259,7 +233,7 @@ install_rabbitmq_messagebroker_cluster() {
         --set "rabbitPort=$RABBIT_PORT" \
         --set "rabbitDiscoveryPort=$RABBIT_DISCOVERY_PORT" \
         --set "numRabbitReplicas=$NUM_RABBIT_REPLICAS" \
-        --set "rabbitErlangCookie=$BASE64_ERLANG_COOKIE"
+        --set "rabbitErlangCookie=$RABBIT_ERLANG_COOKIE"
 
     echo "Waiting for all pods to start..."
     while true; do
@@ -276,6 +250,20 @@ install_rabbitmq_messagebroker_cluster() {
             sleep 5
         fi
     done
+
+    if ! kubectl exec rabbitmq-0 -c rabbitmq -- rabbitmqctl list_users | grep -q "^$RABBIT_USERNAME\s"; then
+        kubectl exec rabbitmq-0 -c rabbitmq -- rabbitmqctl add_user $RABBIT_USERNAME $RABBIT_PASSWORD
+    else
+        echo "User \"$RABBIT_USERNAME\" already exists, skipping creation."
+    fi
+    kubectl exec rabbitmq-0 -c rabbitmq -- rabbitmqctl set_permissions -p / $RABBIT_USERNAME ".*" ".*" ".*"
+    echo "Configured RabbitMQ credentials"
+
+    kubectl exec rabbitmq-0 -c rabbitmq -- rabbitmqctl set_policy ha-fed \
+        ".*" '{"federation-upstream-set":"all", "ha-sync-mode":"automatic", "ha-mode":"all"}' \
+        --priority 1 \
+        --apply-to queues
+    echo "Set up queue mirroring"
 
     echo "RabbitMQ cluster for message brokering installed"
 }
@@ -342,7 +330,7 @@ install_redis_userstate_cluster() {
     done
 
     local cluster_status=$(
-        kubectl exec redis-0 -- redis-cli -a "$REDIS_PASSWORD" cluster info \
+        kubectl exec redis-0 -c redis -- redis-cli -a "$REDIS_PASSWORD" cluster info \
         | grep cluster_state
     )
     if [[ "$cluster_status" == *"cluster_state:ok"* ]]; then
@@ -404,7 +392,7 @@ install_app() {
         --set "rabbitPassword=$RABBIT_PASSWORD" \
         --set "rabbitNlbDns=$NLB_DNS" \
         --set "albDns=$ALB_DNS" \
-        --set "flaskSecretKey=$BASE64_SECRET_KEY"
+        --set "flaskSecretKey=$FLASK_SECRET_KEY"
     
     echo "Waiting for the pods to be ready (this may take a while)..."
     kubectl wait --for=condition=ready pod -l app=backend --timeout=5m
@@ -416,11 +404,9 @@ install_app() {
 
 check_commands
 check_aws_env
-check_config_variables
+check_configuration_variables
 
 compute_num_redis_replicas_total
-encode_flask_secret
-encode_rabbit_erlang_cookie
 get_public_ip
 get_aws_account_id
 create_self_signed_ssl_cert
@@ -437,7 +423,6 @@ get_alb_dns
 
 install_rabbitmq_serviceaccount
 install_rabbitmq_messagebroker_cluster
-get_nlb_dns
 
 install_ebs_csi_controller_serviceaccount
 install_redis_userstate_cluster

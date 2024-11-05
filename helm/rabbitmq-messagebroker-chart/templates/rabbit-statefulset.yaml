@@ -3,7 +3,7 @@ kind: StatefulSet
 metadata:
   name: rabbitmq
 spec:
-  serviceName: rabbitmq-broker-service
+  serviceName: rabbitmq-headless-service
   replicas: {{ .Values.numRabbitReplicas }}
   selector:
     matchLabels:
@@ -53,11 +53,11 @@ spec:
             - name: RABBITMQ_USE_LONGNAME
               value: "true"
             - name: K8S_SERVICE_NAME
-              value: rabbitmq-broker-service
+              value: rabbitmq-headless-service
             - name: RABBITMQ_NODENAME
               value: rabbit@$(RABBIT_POD_NAME).$(K8S_SERVICE_NAME).$(RABBIT_POD_NAMESPACE).svc.cluster.local
             - name: K8S_HOSTNAME_SUFFIX
-              value: .rabbitmq-broker-service.$(RABBIT_POD_NAMESPACE).svc.cluster.local
+              value: .rabbitmq-headless-service.$(RABBIT_POD_NAMESPACE).svc.cluster.local
             - name: RABBITMQ_CONFIG_FILE
               # value: /config/rabbitmq  # TÄÄ OLI ALKUPERÄINEN
               value: /config/rabbitmq.conf
@@ -106,7 +106,7 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: rabbitmq-broker-service
+  name: rabbitmq-headless-service
 spec:
   clusterIP: None
   ports:
@@ -118,3 +118,15 @@ spec:
       name: amqp
   selector:
     app: rabbitmq-broker
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: rabbitmq-loadbalancer-service
+spec:
+  selector:
+    app: rabbitmq-broker
+  ports:
+    - port: {{ .Values.rabbitPort }}
+      targetPort: {{ .Values.rabbitPort }}
+      name: amqp

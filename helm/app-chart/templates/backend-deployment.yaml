@@ -28,7 +28,7 @@ spec:
               valueFrom:
                 secretKeyRef:
                   name: flask-secret
-                  key: secret_key
+                  key: FLASK_SECRET_KEY
             - name: NUM_REDIS_REPLICAS_TOTAL
               value: "{{ .Values.numRedisReplicasTotal }}"
             - name: REDIS_PORT
@@ -40,15 +40,24 @@ spec:
             - name: REDIS_NAMESPACE
               value: "default"
             - name: REDIS_PASSWORD
-              value: "{{ .Values.redisPassword }}"
-            - name: RABBIT_NLB_DNS
-              value: "{{ .Values.rabbitNlbDns }}"
+              valueFrom:
+                secretKeyRef:
+                  name: redis-secret
+                  key: REDIS_PASSWORD
+            - name: RABBIT_HOST
+              value:  "rabbitmq-loadbalancer-service"
             - name: RABBIT_PORT
               value: "{{ .Values.rabbitPort }}"
             - name: RABBIT_USERNAME
-              value: "{{ .Values.rabbitUsername }}"
+              valueFrom:
+                secretKeyRef:
+                  name: rabbitmq-secret
+                  key: RABBIT_USERNAME
             - name: RABBIT_PASSWORD
-              value: "{{ .Values.rabbitPassword }}"
+              valueFrom:
+                secretKeyRef:
+                  name: rabbitmq-secret
+                  key: RABBIT_PASSWORD
             - name: ALB_DNS
               value: "{{ .Values.albDns }}"
             - name: CONTAINER_PORT
