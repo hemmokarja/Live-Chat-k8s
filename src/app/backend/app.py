@@ -11,7 +11,7 @@ import sys
 from flask import jsonify, request
 from flask_socketio import emit, join_room, leave_room
 
-import util
+import initialization
 
 logging.basicConfig(
     level=logging.INFO,
@@ -20,9 +20,9 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-app = util.init_app()
-socketio = util.init_socket(app)
-manager = util.init_chat_manager()
+app = initialization.init_app()
+socketio = initialization.init_socket(app)
+manager = initialization.init_chat_manager()
 
 
 @app.route("/api/")

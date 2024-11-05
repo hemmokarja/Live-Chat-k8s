@@ -16,6 +16,7 @@ spec:
       containers:
         - name: ui
           image: "{{ .Values.awsAccountId }}.dkr.ecr.{{ .Values.region }}.amazonaws.com/{{ .Values.uiEcrRepositoryName }}:latest"
+          imagePullPolicy: Always
           ports:
             - containerPort: {{ .Values.uiServicePort }}
           env:
@@ -27,7 +28,7 @@ spec:
               valueFrom:
                 secretKeyRef:
                   name: flask-secret
-                  key: secret_key
+                  key: FLASK_SECRET_KEY
             - name: BACKEND_URL
               value: "http://backend-service:{{ .Values.backendServicePort }}"
             - name: CONTAINER_PORT

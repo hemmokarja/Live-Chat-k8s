@@ -14,9 +14,8 @@ Please keep in mind that this project is intended as a personal project, primari
 - **Scalable Architecture**: Designed to handle increasing loads with ease.
   - **Modular Architecture**: The backend (handling WebSocket traffic and user state) is separate from the UI module (serving web pages), enabling granular scalability.
   - **Autoscaling**: Both cluster and horizontal pod autoscaling are implemented to accommodate virtually unlimited users, scaling up and down dynamically depending on demand.
-- **Redis User State Management**: User state is managed by a Redis Cluster, providing high availability and failover capabilities to ensure resilient and reliable state management across the app.
-- **Redis Message Brokering**: Redis is used for message brokering between backend pods using its PUB/SUB mechanism.
-  - *Note: In this intermediate version, the app supports only a single Redis PUB/SUB message broker replica, which limits scalability. This will be addressed in future versions to enable full scaling alongside the rest of the app.*
+- **Redis User State Management**: User state is managed by a Redis Cluster with Sharding and Replication, supporting high traffic, and providing high availability and failover capabilities.
+- **RabbitMQ Message Brokering**: Message routing across backend pods is powered by a RabbitMQ Cluster with Mirrored Queues, ensuring resilient, reliable communication and maintaining high availability through robust failover mechanisms.
 
 ## 🛠️ Built With
 
@@ -24,7 +23,7 @@ Please keep in mind that this project is intended as a personal project, primari
 - **Frontend**: JavaScript, HTML, CSS
 - **Infrastructure**: AWS Elastic Kubernetes Service (EKS), Helm for Kubernetes deployment, Terraform for resource provisioning
 - **In-memory Database for User State Management**: Redis Cluster
-- **Message Broker**: Redis
+- **Message Broker**: RabbitMQ Cluster
 
 ## 📝 Requirements
 
@@ -46,13 +45,16 @@ Before you can deploy the application, make sure you have the following availabl
 To deploy the chat application, follow these steps:
 
 1. **Review Configuration**: 
-   - Open `config.sh` to customize settings as needed.
+   - Open `config.yaml` to customize settings as needed.
    
 2. **Set Secrets**:
-   - Make sure to export the Flask secret key and Redis password (you can set any values you like!):
+   - Make sure to export the necessary secrets for the application (you can set any values you like!):
      ```bash
      export FLASK_SECRET_KEY=<your-secret-key>
      export REDIS_PASSWORD=<your-password>
+     export RABBIT_ERLANG_COOKIE=<your-erlang-cookie>
+     export RABBIT_USERNAME=<your-username>
+     export RABBIT_PASSWORD=<your-password>
      ```
 
 3. **Build Resources**:

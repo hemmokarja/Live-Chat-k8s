@@ -1,7 +1,7 @@
 #!/bin/bash
 set -euo pipefail
 
-source config.sh
+source ./scripts/load_config.sh
 source ./scripts/util.sh
 
 CERT_DIR="./.cert"
@@ -53,6 +53,30 @@ uninstall_ebs_csi_controller_serviceaccount () {
         echo "EBS CSI Controller Service Account uninstalled"
     else
         echo "Release 'ebs-csi-controller-serviceaccount-release' already uninstalled or doesn't exist."
+    fi
+    sleep 5
+}
+
+
+uninstall_rabbitmq_messagebroker_cluster () {
+    echo "Uninstalling RabbitMQ message broker cluster..."
+    if helm status rabbitmq-messagebroker-release &> /dev/null; then
+        helm uninstall rabbitmq-messagebroker-release
+        echo "RabbitMQ message broker cluster uninstalled"
+    else
+        echo "Release 'rabbitmq-messagebroker-release' already uninstalled or doesn't exist."
+    fi
+    sleep 5
+}
+
+
+uninstall_rabbitmq_serviceaccount () {
+    echo "Uninstalling RabbitMQ Service Account..."
+    if helm status rabbitmq-serviceaccount-release &> /dev/null; then
+        helm uninstall rabbitmq-serviceaccount-release
+        echo "RabbitMQ Service Account uninstalled"
+    else
+        echo "Release 'rabbitmq-serviceaccount-release' already uninstalled or doesn't exist."
     fi
     sleep 5
 }
@@ -167,16 +191,24 @@ delete_cert_dir() {
 
 check_aws_env
 check_commands
-check_config_variables
+check_configuration_variables
 get_aws_account_id
+
 uninstall_app
-uninstall_redis_messagebroker
+
 uninstall_redis_userstate_cluster
 uninstall_ebs_csi_controller_serviceaccount
+
+uninstall_rabbitmq_messagebroker_cluster
+uninstall_rabbitmq_serviceaccount
+
 uninstall_ingress
 uninstall_load_balancer_controller
+
 uninstall_metrics_server
+
 destroy_terraform
+
 delete_kube_context
 delete_cert_dir
 
