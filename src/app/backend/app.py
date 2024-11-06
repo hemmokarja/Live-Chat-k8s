@@ -4,8 +4,8 @@ from gevent import monkey
 # https://flask-socketio.readthedocs.io/en/latest/deployment.html#using-multiple-workers
 monkey.patch_all()
 
-import os
 import logging
+import os
 import sys
 
 from flask import jsonify, request

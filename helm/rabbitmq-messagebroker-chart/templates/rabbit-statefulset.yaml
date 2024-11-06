@@ -59,7 +59,6 @@ spec:
             - name: K8S_HOSTNAME_SUFFIX
               value: .rabbitmq-headless-service.$(RABBIT_POD_NAMESPACE).svc.cluster.local
             - name: RABBITMQ_CONFIG_FILE
-              # value: /config/rabbitmq  # TÄÄ OLI ALKUPERÄINEN
               value: /config/rabbitmq.conf
             - name: RABBITMQ_ERLANG_COOKIE
               valueFrom:
