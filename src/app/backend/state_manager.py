@@ -1,7 +1,7 @@
+import hashlib
 import json
 import logging
 import uuid
-import hashlib
 
 from redis.cluster import ClusterNode, RedisCluster
 

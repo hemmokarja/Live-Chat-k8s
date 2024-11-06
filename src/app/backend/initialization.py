@@ -2,10 +2,10 @@ import os
 
 from flask import Flask
 from flask_socketio import SocketIO
-
-import chat_manager
-from chat_manager import RedisChatManager
 from socketio import KombuManager
+
+import state_manager
+from state_manager import RedisChatManager
 
 
 def init_app():
@@ -54,7 +54,7 @@ def init_socket(app):
 
 
 def init_chat_manager():
-    startup_nodes = chat_manager.get_startup_nodes(
+    startup_nodes = state_manager.get_startup_nodes(
         num_replicas=int(os.environ["NUM_REDIS_REPLICAS_TOTAL"]),
         pod_name_prefix=os.environ["REDIS_POD_NAME_PREFIX"],
         service_name=os.environ["REDIS_SERVICE_NAME"],
