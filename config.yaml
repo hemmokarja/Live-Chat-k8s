@@ -4,6 +4,9 @@ project:
   username: "Hemmo"
   region: "eu-north-1"
 
+helm:
+  aws_load_balancer_controller_chart_version: "1.10.0"
+
 eks:
   kubernetes_version: "1.31"
   metrics_server_version: "v0.7.2"

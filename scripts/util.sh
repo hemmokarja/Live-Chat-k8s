@@ -16,6 +16,7 @@ check_configuration_variables() {
         "CLUSTER_NAME"
         "USERNAME"
         "REGION"
+        "AWS_LOAD_BALANCER_CONTROLLER_HELM_CHART_VERSION"
         "EKS_KUBERNETES_VERSION"
         "METRICS_SERVER_VERSION"
         "EKS_INSTANCE_TYPE"

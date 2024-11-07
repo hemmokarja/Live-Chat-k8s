@@ -168,6 +168,7 @@ install_load_balancer_controller_serviceaccount() {
 
     helm upgrade -i aws-load-balancer-controller eks/aws-load-balancer-controller \
         -n kube-system \
+        --version "$AWS_LOAD_BALANCER_CONTROLLER_HELM_CHART_VERSION" \
         --set "clusterName=$CLUSTER_NAME" \
         --set serviceAccount.create=false \
         --set serviceAccount.name=aws-load-balancer-controller-serviceaccount \
