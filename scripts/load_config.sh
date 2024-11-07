@@ -6,6 +6,9 @@ CLUSTER_NAME=$(yq ".project.cluster_name" config.yaml)
 USERNAME=$(yq ".project.username" config.yaml)
 REGION=$(yq ".project.region" config.yaml)
 
+# load helm settings
+AWS_LOAD_BALANCER_CONTROLLER_HELM_CHART_VERSION=$(yq ".helm.aws_load_balancer_controller_chart_version" config.yaml)
+
 # load EKS settings
 EKS_KUBERNETES_VERSION=$(yq ".eks.kubernetes_version" config.yaml)
 METRICS_SERVER_VERSION=$(yq ".eks.metrics_server_version" config.yaml)
