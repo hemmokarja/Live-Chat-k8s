@@ -21,7 +21,6 @@ VPC_ID=""
 AWS_LB_CONTROLLER_ROLE_ARN=""
 ACM_CERTIFICATE_ARN=""
 ALB_DNS=""
-NLB_DNS=""
 NUM_REDIS_REPLICAS_TOTAL=""
 
 
@@ -270,32 +269,6 @@ install_rabbitmq_messagebroker_cluster() {
 }
 
 
-get_nlb_dns() {
-    echo "Retrieving RabbitMQ NLB DNS..."
-
-    local retries=30
-    local sleep_interval=5
-
-    for ((i=1; i<=retries; i++)); do
-        NLB_DNS=$(
-            kubectl get svc rabbitmq-nlb -o \
-            jsonpath="{.status.loadBalancer.ingress[0].hostname}"
-        )
-
-        if [[ -n "$NLB_DNS" ]]; then
-            echo "RabbitMQ NLB DNS retrieved: $NLB_DNS"
-            return 0
-        fi
-
-        echo "RabbitMQ NLB DNS not available yet, retrying in $sleep_interval seconds... ($i/$retries)"
-        sleep $sleep_interval
-    done
-
-    echo "Failed to retrieve RabbitMQ NLB DNS after $retries attempts. Exiting."
-    exit 1
-}
-
-
 install_ebs_csi_controller_serviceaccount() {
     helm upgrade -i ebs-csi-controller-serviceaccount-release "./helm/ebs-csi-controller-serviceaccount-chart" \
         --set "ebsCsiDriverRoleArn=$AWS_LB_CONTROLLER_ROLE_ARN"
@@ -391,7 +364,6 @@ install_app() {
         --set "rabbitPort=$RABBIT_PORT" \
         --set "rabbitUsername=$RABBIT_USERNAME" \
         --set "rabbitPassword=$RABBIT_PASSWORD" \
-        --set "rabbitNlbDns=$NLB_DNS" \
         --set "albDns=$ALB_DNS" \
         --set "flaskSecretKey=$FLASK_SECRET_KEY"
     
